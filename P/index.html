@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TABLE — Private Poker</title>
+  <style>
+    :root{--bg:#f4f7fb;--surface:#fff;--surface-2:#eef4ff;--line:#c8d6ed;--text:#082154;--dim:#55709d;--blue:#0458bf;--navy:#082a70;--red:#ec3044;--green:#17885a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;font-size:15px}button,input,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+    #login{min-height:100vh;display:grid;place-items:center;padding:24px;position:relative;background:linear-gradient(90deg,rgba(4,36,102,.89),rgba(4,36,102,.48)),url('https://i2.pickpik.com/photos/413/584/970/gaming-casino-card-poker-a0146c034797250127ab75ce5a384c03.jpg') center/cover}.login-card{width:min(100%,410px);background:#fff;padding:34px;border-top:8px solid var(--red);box-shadow:12px 12px 0 rgba(1,22,69,.34)}.logo{font-size:13px;letter-spacing:.22em;font-weight:900;color:var(--blue);margin-bottom:46px}.login-card h1{font-size:32px;letter-spacing:-.05em;margin:0 0 9px}.login-card p{line-height:1.7;color:var(--dim);margin:0 0 28px}.field{display:grid;gap:8px;margin:15px 0}.field label{font-size:12px;color:var(--dim);font-weight:800}.field input,.field select{height:46px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--text);padding:0 13px;outline:none}.field input:focus{border-color:var(--blue)}.primary,.secondary{border:0;border-radius:4px;height:46px;padding:0 16px;font-weight:800}.primary{width:100%;background:var(--red);color:#fff}.primary:hover{background:#d92237}.secondary{background:var(--blue);border:1px solid var(--blue);color:#fff}.or{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:12px;margin:19px 0}.or:before,.or:after{content:"";height:1px;background:var(--line);flex:1}.note{font-size:12px;color:#747f91;margin-top:20px}
+    #app{min-height:100vh}.nav{height:66px;border-bottom:4px solid var(--red);background:var(--blue);display:flex;align-items:center;padding:0 clamp(18px,4vw,56px);gap:30px}.nav-logo{font-size:13px;font-weight:900;letter-spacing:.18em;color:#fff;margin-right:20px}.nav button{border:0;background:transparent;color:#cbdcff;height:66px;padding:0 4px;font-size:14px;font-weight:700}.nav button.active{color:#fff;border-bottom:4px solid #fff}.account{margin-left:auto;color:#dbe9ff;font-size:13px;display:flex;align-items:center;gap:12px}.account button{height:auto;color:#dbe9ff;font-size:12px}.wrap{max-width:1120px;margin:auto;padding:45px 28px}.page-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:34px}.page-head h1{font-size:28px;letter-spacing:-.04em;margin:0}.page-head p{margin:7px 0 0;color:var(--dim);font-size:14px}.status{color:var(--green);font-size:13px;font-weight:800}.status:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:7px}
+    .timer-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px}.timer-main,.card{border:1px solid var(--line);border-radius:4px;background:var(--surface)}.timer-main{min-height:465px;display:grid;place-content:center;text-align:center;padding:35px;border-top:7px solid var(--blue)}.level{color:var(--blue);font-size:12px;letter-spacing:.16em;font-weight:900}.time{font-size:clamp(82px,13vw,148px);font-weight:800;line-height:1;letter-spacing:-.075em;margin:14px 0 37px;font-variant-numeric:tabular-nums}.blind-row{display:flex;justify-content:center;gap:44px}.blind-row div{min-width:104px}.blind-row span{display:block;font-size:11px;color:var(--dim);letter-spacing:.08em;font-weight:800}.blind-row b{display:block;font-size:26px;margin-top:6px}.next-level{border-top:1px solid var(--line);padding-top:20px;margin-top:28px;color:var(--dim);font-size:13px}.next-level b{color:var(--text);margin-left:6px}.side{display:grid;align-content:start;gap:18px}.card{padding:20px}.card h2{font-size:12px;letter-spacing:.12em;color:var(--blue);margin:0 0 16px;font-weight:900}.control-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.control-grid button{height:43px;border-radius:4px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13px;font-weight:700}.control-grid .wide{grid-column:span 2}.control-grid .play{background:var(--red);color:#fff;border-color:var(--red);font-weight:900}.player{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:13px}.player:first-of-type{border-top:0}.player span:last-child{color:var(--dim)}
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px}.metric{border:1px solid var(--line);border-radius:4px;padding:17px;background:var(--surface)}.metric small{color:var(--dim)}.metric b{font-size:22px;display:block;margin-top:8px}.dashboard-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:18px}.table{width:100%;border-collapse:collapse}.table th{text-align:left;color:var(--dim);font-size:11px;letter-spacing:.06em;font-weight:600;padding:0 0 13px}.table td{padding:14px 0;border-top:1px solid var(--line);font-size:14px}.rank{color:var(--blue);font-weight:900;width:36px}.positive{color:var(--green)}.negative{color:var(--red)}.history{color:var(--dim);font-size:13px}.result-form{display:grid;gap:10px}.result-row{display:grid;grid-template-columns:1.15fr .75fr .55fr .75fr .8fr;gap:8px}.result-row input{width:100%;height:39px;border:1px solid var(--line);background:#fff;border-radius:4px;color:var(--text);padding:0 10px;font-size:13px}
+    dialog{border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--text);padding:0;width:min(92vw,390px);box-shadow:10px 10px 0 var(--blue)}dialog::backdrop{background:#071b4ab8}.modal{padding:23px;border-top:6px solid var(--red)}.modal h2{margin:0 0 7px;font-size:20px}.modal p{color:var(--dim);font-size:13px;line-height:1.6}.modal .field{margin:17px 0}.modal-actions{display:flex;justify-content:flex-end;gap:8px}.modal-actions button{height:39px;border-radius:4px;padding:0 13px;border:1px solid var(--line);background:transparent;color:var(--text)}.modal-actions .save{background:var(--red);color:#fff;border-color:var(--red);font-weight:800}
+    .photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.photo-card{min-height:170px;padding:22px;display:flex;align-items:end;background:center/cover;border-radius:4px;position:relative;overflow:hidden;color:#fff}.photo-card:before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(1,20,55,.82),transparent)}.photo-card>*{position:relative}.photo-card h3{font-size:20px;margin:0}.photo-card p{font-size:13px;margin:6px 0 0;color:#dce8ff}.profile-hero{min-height:235px;padding:28px;display:flex;align-items:end;background:linear-gradient(90deg,rgba(1,31,88,.92),rgba(1,31,88,.25)),url('https://i2.pickpik.com/photos/413/584/970/gaming-casino-card-poker-a0146c034797250127ab75ce5a384c03.jpg') center/cover;border-radius:4px;color:#fff}.profile-hero h2{font-size:31px;margin:0}.profile-hero p{margin:7px 0 0;color:#dce8ff}.chip-builder{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.chip-builder input{width:100%;height:42px;border:1px solid var(--line);padding:0 10px;color:var(--text);border-radius:4px}.setting-list{display:grid;gap:12px}.setting-row{display:grid;grid-template-columns:1fr 110px;gap:13px;align-items:center;padding:13px 0;border-top:1px solid var(--line)}.setting-row:first-child{border:0}.setting-row label{font-size:14px;font-weight:700}.setting-row span{font-size:12px;color:var(--dim);display:block;margin-top:3px}.setting-row input{height:38px;border:1px solid var(--line);border-radius:4px;padding:0 9px;color:var(--text)}.admin-badge{font-size:11px;background:#ffe4e7;color:#bc1830;padding:5px 7px;font-weight:800;border-radius:3px}
+    .home-photo{min-height:230px;padding:28px;display:flex;align-items:end;position:relative;color:white;background:linear-gradient(90deg,rgba(1,31,88,.9),rgba(1,31,88,.2)),url('https://www.casinos.at/fileadmin/_processed_/8/a/csm_ps250828_26_0241_R1_de000d242f.jpg') center/cover}.home-photo h1{font-size:32px;margin:0}.home-photo p{margin:8px 0 0;color:#e5eeff}.home-links{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.home-link{background:#fff;border:1px solid var(--line);padding:20px;text-align:left;color:var(--text);min-height:116px}.home-link strong{display:block;font-size:17px;margin-bottom:7px}.home-link span{color:var(--dim);font-size:13px}.home-link .home-icon{font-size:24px;color:var(--blue);margin-bottom:12px}.mobile-tabs{display:none}.dealer-label{color:var(--blue);font-size:13px;font-weight:900;letter-spacing:.08em}.dealer-hint{margin:0 0 18px;color:var(--dim);font-size:14px}.icon-picker{display:flex;flex-wrap:wrap;gap:10px}.icon-choice{width:52px;height:52px;border:2px solid var(--line);background:#fff;border-radius:50%;font-size:25px}.icon-choice.selected{border-color:var(--red);background:#fff0f1}.style-picker{display:flex;flex-wrap:wrap;gap:8px}.style-choice{border:1px solid var(--line);background:#fff;color:var(--text);border-radius:20px;padding:9px 13px}.style-choice.selected{background:var(--blue);color:#fff}.profile-avatar{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;background:#fff;color:var(--blue);font-size:38px;border:4px solid var(--red);margin-bottom:14px}.profile-mini{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:#eef4ff;color:var(--blue);font-size:16px;margin-right:8px;flex:none}.profile-mini img{width:100%;height:100%;object-fit:cover}.style-tag{display:block;font-size:11px;color:var(--dim);margin-top:2px}
+    @media(max-width:760px){body{padding-bottom:76px}.nav{height:58px;padding:0 16px;gap:14px}.nav-logo{margin-right:0}.nav button{display:none}.account{gap:8px}.wrap{padding:22px 15px}.home-links{grid-template-columns:1fr}.home-photo{min-height:210px}.mobile-tabs{position:fixed;display:flex;bottom:0;left:0;right:0;height:68px;background:#fff;border-top:1px solid var(--line);z-index:5;justify-content:space-around;box-shadow:0 -5px 20px #08215412}.mobile-tabs button{border:0;background:transparent;color:var(--dim);font-size:11px;font-weight:700;display:grid;place-content:center;gap:3px}.mobile-tabs button span{font-size:20px}.timer-layout,.dashboard-grid{grid-template-columns:1fr}.timer-main{min-height:390px}.blind-row{gap:12px}.blind-row div{min-width:82px}.summary,.photo-grid{grid-template-columns:1fr}.page-head{align-items:start;gap:12px;flex-direction:column}.result-row{grid-template-columns:1fr .65fr 1fr}.chip-builder{grid-template-columns:1fr 1fr}.setting-row{grid-template-columns:1fr 90px}}
+    @media(max-width:760px){.nav{gap:17px;overflow:auto}.nav-logo{margin-right:0}.nav button{font-size:12px;flex:0 0 auto}.account-mail{display:none}.wrap{padding:30px 17px}.timer-layout,.dashboard-grid{grid-template-columns:1fr}.timer-main{min-height:405px}.blind-row{gap:12px}.blind-row div{min-width:82px}.summary,.photo-grid{grid-template-columns:1fr}.page-head{align-items:start;gap:12px;flex-direction:column}.result-row{grid-template-columns:1.15fr .75fr .55fr .75fr .8fr;gap:4px}.result-row input{padding:0 5px;font-size:11px}.chip-builder{grid-template-columns:1fr 1fr}.setting-row{grid-template-columns:1fr 90px}}
+    :root{--bg:#f5f1fc;--surface:#fff;--surface-2:#f7f3ff;--line:#e8e1f1;--text:#29243a;--dim:#827a91;--blue:#6148b8;--navy:#392970;--red:#805bd0;--green:#238b66}
+    body{background:radial-gradient(ellipse at 15% 0%,#eee5ff 0,transparent 38rem),var(--bg)}
+    .nav{background:#fff;border:0;border-bottom:1px solid var(--line);box-shadow:0 3px 18px #35245f0c}
+    .nav-logo{color:var(--blue)}.nav button{color:#81798f}.nav button.active{color:var(--blue);border-bottom-color:var(--blue)}.account,.account button{color:#665e76}
+    .wrap{max-width:980px;padding-top:32px}.home-photo{min-height:215px;border-radius:20px;box-shadow:0 12px 34px #35245f18;background-image:linear-gradient(90deg,rgba(50,34,93,.86),rgba(70,47,121,.2)),url('https://www.casinos.at/fileadmin/_processed_/8/a/csm_ps250828_26_0241_R1_de000d242f.jpg')}
+    .home-links{gap:12px}.home-link{border-radius:16px;box-shadow:0 5px 18px #35245f0a;transition:transform .16s,box-shadow .16s}.home-link:active{transform:scale(.985)}.home-link .home-icon{width:40px;height:40px;border-radius:13px;background:#f0eaff;display:grid;place-items:center;margin:0 0 12px;color:var(--blue)}
+    .timer-main,.card,.metric{border-radius:16px;box-shadow:0 5px 18px #35245f0a}.timer-main{border-top:0;background:linear-gradient(145deg,#fff,#f9f6ff)}.control-grid button,.primary,.secondary,.modal-actions button{border-radius:10px}.control-grid .play,.primary{background:var(--blue);border-color:var(--blue);color:#fff}.primary:hover{background:#50389f}.secondary{background:#f0eaff;border:1px solid #e3d9f6;color:var(--blue)}
+    .profile-avatar{border-color:#e5dafa;background:#f0eaff}.icon-choice{border-radius:16px}.icon-choice.selected{background:#f0eaff;border-color:var(--blue)}.style-choice{border-radius:999px}.style-choice.selected{background:var(--blue)}
+    .mobile-tabs{background:rgba(255,255,255,.96);backdrop-filter:blur(16px);border-color:var(--line);box-shadow:0 -4px 20px #35245f0a}.mobile-tabs button.active{color:var(--blue)}.photo-card{border-radius:16px}
+    .current-rank{display:flex;align-items:center;gap:13px;padding:15px 17px;margin:14px 0 2px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 5px 18px #35245f0a}.current-rank .rank-avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#f0eaff;color:var(--blue);font-size:24px;overflow:hidden;flex:none}.current-rank .rank-avatar img{width:100%;height:100%;object-fit:cover}.current-rank .rank-copy{display:grid;gap:4px;flex:1}.current-rank small{font-size:10px;letter-spacing:.1em;color:var(--dim);font-weight:800}.current-rank b{font-size:15px}.current-rank .position{font-size:24px;color:var(--blue);font-weight:900}.current-rank .rank-profit{font-size:12px;color:var(--green);font-weight:800}.account-mail{font-size:11px;color:var(--dim)}.bust-box{margin:12px 0 4px;padding:15px;border-radius:14px;background:#f7f3ff;display:flex;align-items:center;gap:12px}.bust-box div{flex:1}.bust-box small{display:block;color:var(--dim);font-size:11px}.bust-box b{font-size:18px}.bust-box button{border:0;border-radius:9px;background:#ffe9ed;color:#bb2948;padding:10px 12px;font-weight:800}.report-summary{padding:12px;background:#f7f3ff;border-radius:10px;color:var(--text);font-size:13px;line-height:1.7}
+    .table-rank-avatar{width:36px;height:36px;border-radius:50%;display:inline-grid;place-items:center;vertical-align:middle;margin-right:9px;background:#f0eaff;color:var(--blue);font-size:19px;overflow:hidden}.table-rank-avatar img{width:100%;height:100%;object-fit:cover}.rank-person{font-weight:800;white-space:nowrap}.rank-name-cell{display:flex;align-items:center}.table td:first-child{font-weight:900;color:var(--blue)}.table th,.table td{padding-right:8px}.my-row{background:#f5f0ff}.my-row td{font-weight:800}
+    .home-photo h1{font-size:30px}.page-head h1{font-size:25px}.card h2{letter-spacing:.04em}
+    .bust-box button:active,.home-link:active{transform:scale(.98)}.report-summary{font-variant-numeric:tabular-nums}.account>span:first-child{display:grid;gap:2px}
+    @media(max-width:760px){.account>span:first-child{display:none}.account-mail{display:none}}
+    @media(max-width:760px){.nav{height:54px}.wrap{padding:17px 14px 26px}.home-photo{min-height:190px;border-radius:17px}.home-links{grid-template-columns:1fr 1fr;margin-top:13px;gap:10px}.home-link{min-height:112px;padding:13px;border-radius:15px}.home-link strong{font-size:14px}.home-link span{font-size:12px}.current-rank{margin:12px 0;padding:13px;border-radius:15px}.table th{font-size:10px}.table td{font-size:12px;padding-top:12px;padding-bottom:12px}.table-rank-avatar{width:32px;height:32px;margin-right:6px}.summary{gap:10px}.metric{border-radius:14px}.page-head{margin-bottom:22px}.result-row{grid-template-columns:1.15fr .75fr .55fr .75fr .8fr;gap:4px}.result-row input{padding:0 4px;font-size:10px}}
+    /* Restore the purple app theme, with clearer actions and consistent icons. */
+    body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;background:#f7f5fa}
+    .nav{box-shadow:none}.nav-logo{font-size:16px;font-weight:900;letter-spacing:.1em}
+    .home-photo{min-height:230px;box-shadow:none;border-radius:18px;background-image:linear-gradient(0deg,rgba(30,18,58,.88),rgba(30,18,58,.06) 85%),url('https://www.casinos.at/fileadmin/_processed_/8/a/csm_ps250828_26_0241_R1_de000d242f.jpg')}
+    .home-photo h1{font-size:32px;letter-spacing:0}.home-photo p{font-size:13px;color:#fff}
+    .home-links{grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}.home-link{min-height:145px;border:0;padding:20px;box-shadow:0 2px 7px #34214b08;border-radius:16px}.home-link strong{font-weight:800}.home-link .home-icon{background:transparent;width:30px;height:30px;border-radius:0;margin-bottom:14px}.home-link span{line-height:1.6}
+    #checkIn{background:#6148b8;color:#fff}#checkIn .home-icon{color:#fff}#checkIn span{color:#e4dcf7}
+    .home-icon svg,.mobile-tabs svg{width:24px;height:24px;display:block}.mobile-tabs button span{display:grid;place-items:center}.mobile-tabs button{min-width:56px;gap:5px}.mobile-tabs button.active{font-weight:800}
+    .current-rank{border:0;box-shadow:none;padding:18px}.current-rank small{font-size:11px;letter-spacing:0}.current-rank .position{font-size:30px}.current-rank .rank-profit{font-size:13px}
+    .card,.metric{box-shadow:none}.card h2{font-size:14px;letter-spacing:0}.primary,.secondary{min-height:48px;font-weight:800}.page-head h1{letter-spacing:0}
+    .field input,.field select{border-radius:10px}.field input:focus{box-shadow:0 0 0 3px #6148b818}.profile-avatar{overflow:hidden}.profile-avatar img{display:block}
+    .text-button{border:0;background:none;color:var(--blue);padding:4px 0;font-size:12px;text-align:left}
+    input[type="file"]{height:auto;padding:8px;border-radius:9px}.field input[type="file"]::file-selector-button{border:0;border-radius:7px;background:#f0eaff;color:var(--blue);padding:8px 11px;margin-right:10px;font-weight:700}
+    button:focus-visible{outline:3px solid #aa94e6;outline-offset:3px}
+    @media(max-width:760px){.wrap{padding:16px 16px 28px}.home-photo{min-height:215px;padding:22px;border-radius:17px}.home-photo h1{font-size:28px}.home-links{gap:10px;margin-top:16px}.home-link{min-height:135px;padding:17px 14px}.home-link strong{font-size:14px;line-height:1.5}.home-link span{font-size:11px}.current-rank{padding:15px;margin-top:14px}.current-rank .rank-avatar{width:44px;height:44px}.current-rank .position{font-size:27px}.photo-card{min-height:165px}.mobile-tabs{padding-bottom:env(safe-area-inset-bottom);height:calc(68px + env(safe-area-inset-bottom))}body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}}
+    .home-link{display:flex;flex-direction:column;align-items:stretch;min-height:0;padding:0;overflow:hidden;text-align:left}
+    .menu-photo{width:100%;aspect-ratio:16 / 10;overflow:hidden;background:#e9e4ef;flex:none}
+    .menu-photo img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .25s ease}
+    .home-link:hover .menu-photo img{transform:scale(1.035)}
+    .home-link strong{margin:14px 16px 4px;line-height:1.5;font-size:16px}
+    .home-link>span{margin:0 16px 16px;line-height:1.6;font-size:12px}
+    #checkIn .menu-photo{background:#e9e4ef}
+    @media(max-width:760px){.home-link{padding:0;min-height:0}.home-link strong{font-size:14px;margin:12px 12px 4px;min-height:42px}.home-link>span{margin:0 12px 13px;font-size:11px}.menu-photo{aspect-ratio:4 / 3}}
+    #authGate,#authForm{min-height:100vh;display:grid;place-items:center;padding:24px;position:relative;background:linear-gradient(90deg,rgba(31,21,58,.84),rgba(31,21,58,.5)),url('https://www.casinos.at/fileadmin/_processed_/8/a/csm_ps250828_26_0241_R1_de000d242f.jpg') center/cover}
+    .auth-card{width:min(100%,400px);padding:30px;background:rgba(255,255,255,.96);border:1px solid #ffffffb8;border-radius:22px;box-shadow:0 24px 80px #1d15384a;backdrop-filter:blur(16px)}.auth-card .logo{margin-bottom:34px;color:var(--blue)}.auth-card h1{font-size:27px;letter-spacing:-.04em;margin:0 0 8px}.auth-card>p{color:var(--dim);font-size:13px;line-height:1.7;margin:0 0 22px}.auth-actions{display:grid;gap:10px}.auth-actions button,.auth-submit,.auth-back{width:100%;height:50px;border-radius:13px}.auth-actions .secondary,.auth-back{background:#f3effb;color:var(--blue);border:1px solid var(--line)}.auth-message{min-height:20px;font-size:12px;color:#b43a59;margin:10px 0 0}.auth-back{margin-top:8px}
+    #loadingScreen{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:#f7f4fc;transition:opacity .25s ease}.loading-content{text-align:center;color:var(--blue)}.loading-spade{display:block;font-size:72px;line-height:1;animation:spade-pulse 1s ease-in-out infinite}.loading-dots{margin-top:14px;font-size:12px;letter-spacing:.28em;color:var(--dim)}@keyframes spade-pulse{0%,100%{transform:scale(.88);opacity:.58}50%{transform:scale(1.08);opacity:1}}
+  </style>
+</head>
+<body>
+  <section id="authGate" class="hidden"><div class="auth-card"><div class="logo">TABLE</div><h1>今夜のテーブルへ</h1><p>アカウントを作成するか、作成済みのIDでログインしてください。</p><div class="auth-actions"><button class="primary" id="showRegister">アカウントを作成</button><button class="secondary" id="showLogin">ログイン</button></div><p class="note">この試作版のアカウント情報は、このブラウザ内に保存されます。</p></div></section>
+  <section id="authForm" class="hidden"><div class="auth-card"><div class="logo">TABLE</div><h1 id="authTitle">ログイン</h1><p id="authDescription">アカウントIDとパスワードを入力してください。</p><div class="field"><label for="accountId">アカウントID</label><input id="accountId" autocomplete="username" minlength="3" maxlength="20" placeholder="例：yuta_01" required></div><div class="field"><label for="accountPassword">パスワード</label><input id="accountPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8文字以上" required></div><button class="primary auth-submit" id="submitAuth">ログイン</button><button class="auth-back" id="backAuth">戻る</button><p class="auth-message" id="authMessage" role="status"></p></div></section>
+  <div id="loadingScreen"><div class="loading-content"><span class="loading-spade">♠</span><div class="loading-dots">TABLE　·　LOADING</div></div></div>
+  <section id="app" class="hidden">
+    <nav class="nav"><div class="nav-logo">TABLE</div><button data-page="home">ホーム</button><button data-page="timer">交代タイマー</button><button data-page="my">マイページ</button><button data-page="dashboard">ランキング</button><button data-page="results" class="admin-only">精算</button><button data-page="admin" class="admin-only">設定</button><div class="account"><span><b id="userName"></b><small id="userEmail" class="account-mail"></small></span><span class="admin-badge admin-only">ADMIN</span><button id="logout">ログアウト</button></div></nav>
+    <nav class="mobile-tabs"><button data-page="home"><span>⌂</span>ホーム</button><button data-page="timer"><span>◷</span>交代</button><button data-page="my"><span>☺</span>マイページ</button><button data-page="dashboard"><span>♙</span>ランキング</button><button data-page="admin" class="admin-only"><span>⚙</span>設定</button></nav>
+    <main class="wrap">
+      <section id="homePage" class="page"><section class="home-photo"><div><h1>今夜のゲーム</h1><p>10月6日 19:00　参加者 <span id="homePlayerCount">6</span> 名</p></div></section><section class="current-rank"><div class="rank-avatar" id="homeRankAvatar">♠</div><div class="rank-copy"><small>今夜のあなたの順位</small><b id="homeRankName">Yuta</b></div><strong class="position" id="homeRankValue">#1</strong><span class="rank-profit" id="homeRankProfit">+¥7,500</span></section><div class="home-links"><button class="home-link" data-open="timer"><div class="home-icon">◷</div><strong>ディーラー交代タイマー</strong><span>次の交代まで <b id="homeTimer">30:00</b></span></button><button class="home-link" id="checkIn"><div class="home-icon">✓</div><strong>参加チェックイン</strong><span id="checkInStatus">参加する場合はタップ</span></button><button class="home-link" data-open="my"><div class="home-icon">♙</div><strong>自分の成績</strong><span>収支・参加履歴・プレイスタイル</span></button><button class="home-link" data-open="dashboard"><div class="home-icon">♧</div><strong>ランキング</strong><span>みんなの累計収支と参加回数</span></button><button class="home-link admin-only" data-open="admin"><div class="home-icon">⚙</div><strong>ゲーム設定</strong><span>チップ・参加者・交代時間</span></button><button class="home-link admin-only" data-open="results"><div class="home-icon">✓</div><strong>精算を入力</strong><span>終了時の持ち点と順位を確定</span></button></div><div class="photo-grid"><article class="photo-card" style="background-image:url('https://www.casinos.at/fileadmin/_processed_/8/a/csm_ps250828_26_0241_R1_de000d242f.jpg')"><div><h3>今夜のテーブル</h3><p>キャッシュゲーム · ノーリミットホールデム</p></div></article><article class="photo-card" style="background-image:url('https://www.redtoothpoker.com/images/Chips.jpg')"><div><h3>チップとルール</h3><p>詳しくはゲーム設定から確認できます</p></div></article></div></section>
+      <section id="timerPage" class="page hidden"><div class="page-head"><div><h1>ディーラー交代</h1><p>交代のタイミングをみんなで確認できます。</p></div><div class="status" id="gameStatus">開始前</div></div><div class="timer-layout"><section class="timer-main"><div class="dealer-label">次の交代まで</div><div class="time" id="time">30:00</div><p class="dealer-hint">スタートを押すと計測を始めます</p><div class="blind-row"><div><span>現在のディーラー</span><b id="dealerName">Yuta</b></div><div><span>次のディーラー</span><b id="nextDealer">Mika</b></div></div></section><aside class="side"><section class="card"><h2>タイマー操作</h2><div class="control-grid"><button id="toggle" class="wide play">スタート</button><button id="reset" class="admin-only">時間を戻す</button><button id="nextDealerButton" class="admin-only">交代する</button><button id="addRebuy" class="admin-only">追加バイイン</button></div></section><section class="card"><h2>参加プレイヤー</h2><div id="playerList"></div></section></aside></div><div class="summary"><div class="metric"><small>ゲーム形式</small><b>キャッシュゲーム</b></div><div class="metric"><small>ブラインド</small><b>¥<span data-setting="sb">100</span> / ¥<span data-setting="bb">200</span></b></div><div class="metric"><small>参加人数</small><b id="playerCount">6 名</b></div></div></section>
+      <section id="resultsPage" class="page hidden"><div class="page-head"><div><h1>キャッシュアウトを記録</h1><p>スタート持ち点・飛び回数・終了時の持ち点を確認します。</p></div><button class="primary" style="width:auto" id="saveResults">結果を保存</button></div><section class="card"><h2>今回のゲーム</h2><div class="result-form" id="resultsForm"></div></section></section>
+      <section id="dashboardPage" class="page hidden"><div class="page-head"><div><h1>ランキング</h1><p>参加メンバーの成績</p></div></div><section class="current-rank"><div class="rank-avatar" id="rankingMyAvatar">♠</div><div class="rank-copy"><small>今夜のあなたの順位</small><b id="rankingMyName">Yuta</b></div><strong class="position" id="rankingMyValue">#1</strong><span class="rank-profit" id="rankingMyProfit">+¥7,500</span></section><div class="dashboard-grid" style="margin-top:14px"><section class="card"><h2>累計収支</h2><table class="table"><thead><tr><th>順位</th><th>プレイヤー</th><th>参加</th><th>勝率</th><th>収支</th></tr></thead><tbody id="ranking"></tbody></table></section><section class="card"><h2>開催履歴</h2><div class="history"><p>2026.10.06　金曜ゲーム</p><p>2026.09.28　日曜ゲーム</p><p>2026.09.13　9月のゲーム</p></div></section></div></section>
+      <section id="myPage" class="page hidden"><div class="page-head"><div><h1>マイページ</h1><p>プロフィールと成績を確認・編集できます。</p></div><button class="primary" style="width:auto" id="saveProfile">プロフィールを保存</button></div><section class="card"><div class="profile-avatar" id="avatarPreview">♠</div><div class="field"><label>表示名</label><input id="profileName" value="Yuta"></div><div class="field"><label for="profilePhoto">プロフィール写真（任意）</label><input id="profilePhoto" type="file" accept="image/*"><span style="color:var(--dim);font-size:12px">写真を設定しない場合はスペードで表示します。画像は自動で縮小します。</span><button class="text-button" type="button" id="removePhoto">写真を削除して♠に戻す</button></div><h2 style="margin-top:25px">プレイスタイル</h2><p style="color:var(--dim);font-size:13px">自分のプレイに近いものを選びましょう。</p><div class="style-picker" id="stylePicker"><button class="style-choice" data-style="アグレッシブ">🔥 アグレッシブ</button><button class="style-choice" data-style="堅実派">🧠 堅実派</button><button class="style-choice" data-style="ブラフ好き">🎭 ブラフ好き</button><button class="style-choice" data-style="初心者">🌱 初心者</button><button class="style-choice" data-style="エンジョイ勢">🍻 エンジョイ勢</button></div><div class="bust-box"><div><small>今回の飛び回数</small><b><span id="myBustCount">0</span> 回</b></div><button id="recordBust">飛んだ +1</button></div><button class="secondary" style="margin-top:12px" id="reportCashout">終了時の持ち点を申告</button><p id="reportStatus" style="color:var(--dim);font-size:13px"></p></section><div class="summary"><div class="metric"><small>累計収支</small><b id="myProfit">+¥7,500</b></div><div class="metric"><small>参加回数</small><b>3 回</b></div><div class="metric"><small>勝率</small><b>33.3%</b></div></div><section class="card" style="margin-top:18px"><h2>最近のプレイ</h2><div class="player"><span>10月6日 · Friday Night</span><span>+¥7,500 · 1位</span></div><div class="player"><span>9月28日 · Sunday Game</span><span class="negative">−¥3,000 · 4位</span></div><div class="player"><span>9月13日 · September Game</span><span>+¥2,000 · 2位</span></div></section></section>
+      <section id="adminPage" class="page hidden"><div class="page-head"><div><h1>ゲーム設定</h1><p>チップ構成、ブラインド、交代タイミングを設定できます。</p></div><button class="primary" style="width:auto" id="saveSettings">設定を保存</button></div><div class="dashboard-grid"><section class="card"><h2>チップ構成</h2><div class="chip-builder"><b>色</b><b>額面</b><b>枚数 / 人</b><div id="chipRows" style="display:contents"></div></div><div class="setting-list" style="margin-top:24px"><div class="setting-row"><div><label>スモールブラインド</label><span>SB</span></div><input id="settingSb" type="number" value="100"></div><div class="setting-row"><div><label>ビッグブラインド</label><span>BB</span></div><input id="settingBb" type="number" value="200"></div><div class="setting-row"><div><label>ディーラー交代時間</label><span>何分ごとに交代するか</span></div><input id="dealerMinutes" type="number" min="1" value="30"></div><div class="setting-row"><div><label>開始持ち点</label><span>プレイヤー1人の最初の持ち点</span></div><input id="startStack" type="number" min="1" value="1000"></div></div></section><section class="card"><h2>参加者管理</h2><div id="adminPlayers"></div><button class="secondary" style="width:100%;margin-top:15px" id="addPlayer">参加者を追加</button><h2 style="margin-top:28px">チップ申告の確認</h2><div id="reportList"></div><h2 style="margin-top:28px">公開設定</h2><div class="setting-list"><div class="setting-row"><div><label>収支ランキングを公開</label><span>プレイヤー画面に表示</span></div><input type="checkbox" checked aria-label="ランキングを公開"></div></div></section></div></section>
+    </main>
+  </section>
+  <dialog id="rebuyModal"><form method="dialog" class="modal"><h2>追加バイイン</h2><p>プレイヤーの投入額に追加して記録します。</p><div class="field"><label>プレイヤー</label><select id="rebuyPlayer"></select></div><div class="field"><label>金額</label><input id="rebuyValue" type="number" min="500" step="500" value="3000"></div><div class="modal-actions"><button value="cancel">キャンセル</button><button class="save" id="saveRebuy" value="default">追加する</button></div></form></dialog>
+  <dialog id="cashoutModal"><form method="dialog" class="modal"><h2>終了時の持ち点を申告</h2><p>スタート持ち点、飛び回数、最後に残った点数を記録します。</p><div class="report-summary" id="cashoutSummary">1,000点スタート / 0回飛び / 0点残り</div><div class="field"><label for="reportBusts">飛んだ回数</label><input id="reportBusts" type="number" min="0" step="1" value="0" required></div><div class="field"><label for="cashoutChips">最後に残った持ち点</label><input id="cashoutChips" type="number" min="0" step="1" placeholder="例：500" required></div><div class="modal-actions"><button value="cancel">あとで</button><button class="save" id="sendCashout" value="default">この内容で申告</button></div></form></dialog>
+  <script>
+    (function () {
+      const $ = function (id) { return document.getElementById(id); };
+      const menuIcons = {
+        home: '<path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/>',
+        timer: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+        my: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>',
+        dashboard: '<path d="M4 20V10m8 10V4m8 16v-7M2 20h20"/>',
+        admin: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 7v10m8-10v10M5 10h6m2 4h6"/>',
+        results: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6m-6 4h6"/>',
+        checkin: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>'
+      };
+      function menuIcon(name) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + menuIcons[name] + '</svg>'; }
+      const menuPhotos = {timer:'timer',checkin:'checkin',my:'stats',dashboard:'ranking',admin:'settings',results:'cashout'};
+      document.querySelectorAll('.home-link').forEach(function (button) {
+        const name = menuPhotos[button.id === 'checkIn' ? 'checkin' : button.dataset.open];
+        const photo = button.querySelector('.home-icon');
+        photo.className = 'menu-photo';
+        photo.innerHTML = '<img src="assets/menu/' + name + '.jpg" alt="" width="720" height="480" loading="lazy" decoding="async">';
+      });
+      document.querySelectorAll('.mobile-tabs button').forEach(function (button) {
+        button.querySelector('span').innerHTML = menuIcon(button.dataset.page);
+      });
+      const initialPlayers = ['Yuta','Mika','Sota','Anna','Ryo','Kei'];
+      const fallback = {remaining:1800,paused:true,started:false,prize:21000,startStack:1000,entries:{Yuta:3000,Mika:3000,Sota:6000,Anna:3000,Ryo:3000,Kei:3000},busts:{},results:{Yuta:{rank:1,chips:1500,payout:10500,busts:0},Mika:{rank:2,chips:800,payout:6300,busts:0},Sota:{rank:3,chips:500,payout:4200,busts:0},Anna:{rank:4,chips:200,payout:0,busts:0},Ryo:{rank:5,chips:100,payout:0,busts:0},Kei:{rank:6,chips:0,payout:0,busts:0}},dealerIndex:0,dealerMinutes:30,sb:100,bb:200,profiles:{},checkins:{},reports:{}};
+      const savedState = JSON.parse(localStorage.getItem('table-state') || 'null') || {};
+      let state = Object.assign({}, fallback, savedState);
+      if (!Object.prototype.hasOwnProperty.call(savedState, 'dealerIndex')) state.remaining = state.dealerMinutes * 60;
+      if (state.startStack === 20000 && !savedState.busts) state.startStack = 1000;
+      state.started = Boolean(savedState.started);
+      state.paused = state.started ? Boolean(savedState.paused) : true;
+      state.entries = Object.assign({}, fallback.entries, state.entries || {});
+      state.results = Object.assign({}, fallback.results, state.results || {});
+      state.profiles = state.profiles || {};
+      state.checkins = state.checkins || {};
+      state.reports = state.reports || {};
+      state.busts = state.busts || {};
+      let players = JSON.parse(localStorage.getItem('table-players') || 'null') || initialPlayers.slice();
+      const accounts = JSON.parse(localStorage.getItem('table-accounts') || '{}') || {};
+      let user = JSON.parse(localStorage.getItem('table-user') || 'null');
+      let authMode = 'login';
+      let selectedStyle = 'エンジョイ勢';
+      let selectedPhoto = '';
+      const money = function (n) { return '¥' + new Intl.NumberFormat('ja-JP').format(Number(n) || 0); };
+      const escapeHtml = function (value) { return String(value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+      function avatarMarkup(name, className) {
+        const profile = profileFor(name);
+        const content = profile.photo ? '<img alt="" src="' + profile.photo + '">' : '♠';
+        return '<span class="' + className + '">' + content + '</span>';
+      }
+      const save = function () { localStorage.setItem('table-state', JSON.stringify(state)); localStorage.setItem('table-players', JSON.stringify(players)); };
+      function show(page) {
+        document.querySelectorAll('.page').forEach(function (el) { el.classList.add('hidden'); });
+        $(page + 'Page').classList.remove('hidden');
+        document.querySelectorAll('[data-page]').forEach(function (el) { el.classList.toggle('active', el.dataset.page === page); });
+        if (page === 'my') renderProfile();
+        if (page === 'dashboard') renderRanking();
+        if (page === 'results') renderResults();
+        if (page === 'admin') renderAdmin();
+      }
+      function profileFor(name) { return state.profiles[name] || {style:'エンジョイ勢'}; }
+      function renderProfile() {
+        const p = profileFor(user.name);
+        selectedStyle = p.style;
+        $('profileName').value = p.displayName || user.name;
+        selectedPhoto = p.photo || '';
+        $('avatarPreview').innerHTML = selectedPhoto ? '<img alt="プロフィール写真" src="' + selectedPhoto + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '♠';
+        document.querySelectorAll('.style-choice').forEach(function (b) { b.classList.toggle('selected', b.dataset.style === selectedStyle); });
+        const result = state.results[user.name] || state.results[initialPlayers[0]] || {payout:0};
+        const profit = (result.payout || 0) - (state.entries[user.name] || state.entries[initialPlayers[0]] || 0);
+        $('myProfit').textContent = (profit >= 0 ? '+' : '') + money(profit);
+        $('myBustCount').textContent = state.busts[user.name] || 0;
+        const report = state.reports[user.name];
+        $('reportStatus').textContent = report ? (Number(report.startStack || state.startStack || 1000)).toLocaleString() + '点スタート / ' + Number(report.busts || 0) + '回飛び / ' + Number(report.chips || 0).toLocaleString() + '点残り · ' + (report.status === 'approved' ? '確認済み' : '管理者確認待ち') : '';
+      }
+      function renderTimer() {
+        const seconds = Math.max(0, state.remaining);
+        $('time').textContent = String(Math.floor(seconds / 60)).padStart(2,'0') + ':' + String(seconds % 60).padStart(2,'0');
+        $('homeTimer').textContent = $('time').textContent;
+        const canControl = user && user.role === 'admin';
+        $('toggle').textContent = !state.started ? 'スタート' : (canControl ? (state.paused ? 'タイマーを再開' : '一時停止') : 'タイマー稼働中');
+        $('toggle').disabled = state.started && !canControl;
+        $('gameStatus').textContent = !state.started ? '開始前' : (state.paused ? '一時停止中' : '進行中');
+        $('gameStatus').style.color = state.paused ? 'var(--dim)' : 'var(--green)';
+        const dealer = players.length ? state.dealerIndex % players.length : 0;
+        $('dealerName').textContent = players[dealer] || '—';
+        $('nextDealer').textContent = players.length ? players[(dealer + 1) % players.length] : '—';
+        $('playerCount').textContent = players.length + ' 名';
+        $('homePlayerCount').textContent = players.length;
+        const checkedIn = Boolean(user && state.checkins[user.name]);
+        $('checkInStatus').textContent = checkedIn ? '参加確認済み · タップでキャンセル' : '参加する場合はタップして席を確保';
+        $('checkIn').querySelector('.home-icon').textContent = checkedIn ? '✓' : '＋';
+        $('playerList').innerHTML = players.map(function (p, i) {
+          const profile = profileFor(p);
+          const avatar = profile.photo ? '<img src="' + profile.photo + '" alt="">' : '♠';
+          const busts = state.busts[p] || 0;
+          return '<div class="player"><span style="display:flex;align-items:center"><i class="profile-mini">' + avatar + '</i><span>' + (i === dealer ? '🎴 ' : '') + p + (i === dealer ? ' · ディーラー' : '') + (state.checkins[p] ? ' · 参加確認済み' : '') + '<small class="style-tag">' + (profile.style || 'エンジョイ勢') + ' · ' + busts + '回飛び</small></span></span><span>' + money(state.entries[p] || 0) + '</span></div>';
+        }).join('');
+        document.querySelectorAll('[data-setting="sb"]').forEach(function (el) { el.textContent = Number(state.sb).toLocaleString(); });
+        document.querySelectorAll('[data-setting="bb"]').forEach(function (el) { el.textContent = Number(state.bb).toLocaleString(); });
+        renderRanking();
+        save();
+      }
+      function renderRanking() {
+        const rows = players.map(function (p) {
+          const r = state.results[p] || {};
+          return {name:p, profit:(r.payout || 0) - (state.entries[p] || 0), rank:r.rank || 0};
+        }).sort(function (a,b) { return b.profit - a.profit; });
+        const player = players.includes(user && user.name) ? user.name : initialPlayers[0];
+        const playerRow = rows.findIndex(function (r) { return r.name === player; });
+        const result = rows[playerRow] || {name:player,profit:0};
+        const displayName = (profileFor(player).displayName || player);
+        const avatar = avatarMarkup(player, 'rank-avatar');
+        $('homeRankAvatar').innerHTML = avatar.replace('rank-avatar','rank-avatar-inner');
+        $('rankingMyAvatar').innerHTML = avatar.replace('rank-avatar','rank-avatar-inner');
+        $('homeRankName').textContent = displayName + ' · 今夜の順位';
+        $('rankingMyName').textContent = displayName;
+        $('homeRankValue').textContent = playerRow >= 0 ? '#' + (playerRow+1) : '—';
+        $('rankingMyValue').textContent = playerRow >= 0 ? '#' + (playerRow+1) : '—';
+        $('homeRankProfit').textContent = (result.profit >= 0 ? '+' : '') + money(result.profit);
+        $('rankingMyProfit').textContent = (result.profit >= 0 ? '+' : '') + money(result.profit);
+        $('ranking').innerHTML = rows.map(function (r,i) {
+          const isMe = r.name === player;
+          const games = r.rank ? 3 : 0;
+          const wins = r.rank === 1 ? 1 : 0;
+          return '<tr' + (isMe ? ' class="my-row"' : '') + '><td class="rank">' + (i+1) + '</td><td class="rank-name-cell">' + avatarMarkup(r.name, 'table-rank-avatar') + '<span class="rank-person">' + escapeHtml(profileFor(r.name).displayName || r.name) + '</span></td><td>' + games + '</td><td>' + (wins ? '33.3' : '0') + '%</td><td class="' + (r.profit >= 0 ? 'positive' : 'negative') + '">' + (r.profit >= 0 ? '+' : '') + money(r.profit) + '</td></tr>';
+        }).join('');
+      }
+      function renderResults() {
+        $('resultsForm').innerHTML = '<div class="result-row"><b>プレイヤー</b><b>開始持ち点</b><b>飛び回数</b><b>終了持ち点</b><b>精算額</b></div>' + players.map(function (p) {
+          const r = state.results[p] || {};
+          const busts = state.busts[p] ?? r.busts ?? 0;
+          return '<div class="result-row"><input value="' + p + '" disabled><input data-player="' + p + '" data-key="startStack" type="number" min="1" value="' + (r.startStack || state.startStack) + '"><input data-player="' + p + '" data-key="busts" type="number" min="0" value="' + busts + '"><input data-player="' + p + '" data-key="chips" type="number" min="0" value="' + (r.chips || 0) + '"><input data-player="' + p + '" data-key="payout" type="number" min="0" value="' + (r.payout || 0) + '"></div>';
+        }).join('');
+      }
+      function renderAdmin() {
+        $('adminPlayers').innerHTML = players.map(function (p) { return '<div class="player"><span>' + p + '</span><span>バイイン ' + money(state.entries[p] || 0) + '</span></div>'; }).join('');
+        const reports = Object.entries(state.reports);
+        $('reportList').innerHTML = reports.length ? reports.map(function (entry) {
+          const name = entry[0], report = entry[1];
+          return '<div class="player"><span>' + escapeHtml(name) + ' · ' + Number(report.startStack || state.startStack || 1000).toLocaleString() + '点スタート / ' + Number(report.busts || 0) + '回飛び / ' + Number(report.chips || 0).toLocaleString() + '点残り' + (report.status === 'approved' ? ' · 確認済み' : '') + '</span><button class="secondary" data-approve="' + escapeHtml(name) + '" style="height:32px;padding:0 8px">反映</button></div>';
+        }).join('') : '<p style="color:var(--dim);font-size:13px">まだ申告はありません。</p>';
+        document.querySelectorAll('[data-approve]').forEach(function (button) {
+          button.onclick = function () {
+            const name = button.dataset.approve;
+            state.results[name] = state.results[name] || {};
+            state.results[name].chips = state.reports[name].chips;
+            state.results[name].startStack = state.reports[name].startStack;
+            state.results[name].busts = state.reports[name].busts;
+            state.busts[name] = state.reports[name].busts;
+            state.reports[name].status = 'approved';
+            save(); renderAdmin();
+          };
+        });
+        $('dealerMinutes').value = state.dealerMinutes;
+        $('settingSb').value = state.sb; $('settingBb').value = state.bb;
+        $('startStack').value = state.startStack || 1000;
+        $('chipRows').innerHTML = (state.chips || [{color:'WHITE',value:100,count:10},{color:'BLUE',value:500,count:8},{color:'RED',value:1000,count:5}]).map(function (chip, i) {
+          return '<input data-chip="color" data-index="' + i + '" value="' + chip.color + '" aria-label="チップ色"><input data-chip="value" data-index="' + i + '" type="number" value="' + chip.value + '" aria-label="額面"><input data-chip="count" data-index="' + i + '" type="number" value="' + chip.count + '" aria-label="枚数 / 人">';
+        }).join('');
+      }
+      function boot() {
+        if (!user) return;
+        user.role = user.role || 'player';
+        $('authGate').classList.add('hidden'); $('authForm').classList.add('hidden'); $('app').classList.remove('hidden');
+        const profile = state.profiles[user.name] || {};
+        $('userName').textContent = profile.displayName || user.name;
+        $('userEmail').textContent = 'ID: ' + user.name;
+        const admin = user.role === 'admin';
+        document.querySelectorAll('.admin-only').forEach(function (el) { el.classList.toggle('hidden', !admin); });
+        renderTimer();
+        show('home');
+      }
+      function showAuthForm(mode) {
+        authMode = mode;
+        $('authGate').classList.add('hidden');
+        $('authForm').classList.remove('hidden');
+        $('authTitle').textContent = mode === 'register' ? 'アカウント作成' : 'ログイン';
+        $('authDescription').textContent = mode === 'register' ? '好きなIDとパスワードを設定してください。' : '登録したIDとパスワードを入力してください。';
+        $('submitAuth').textContent = mode === 'register' ? 'アカウントを作成' : 'ログイン';
+        $('accountPassword').autocomplete = mode === 'register' ? 'new-password' : 'current-password';
+        $('authMessage').textContent = '';
+      }
+      function transitionWithLoader(callback) {
+        $('loadingScreen').classList.remove('hidden');
+        window.setTimeout(function () { callback(); $('loadingScreen').classList.add('hidden'); }, 850);
+      }
+      function bytesToHex(bytes) { return Array.from(new Uint8Array(bytes)).map(function (b) { return b.toString(16).padStart(2,'0'); }).join(''); }
+      async function passwordHash(password, saltHex) {
+        if (!window.crypto || !window.crypto.subtle) throw new Error('SECURE_CONTEXT_REQUIRED');
+        const salt = new Uint8Array(saltHex.match(/.{2}/g).map(function (byte) { return parseInt(byte,16); }));
+        const key = await window.crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
+        return bytesToHex(await window.crypto.subtle.deriveBits({name:'PBKDF2',salt:salt,iterations:150000,hash:'SHA-256'},key,256));
+      }
+      async function submitAuth() {
+        const id = $('accountId').value.trim().toLowerCase();
+        const password = $('accountPassword').value;
+        const message = $('authMessage');
+        message.textContent = '';
+        if (!/^[a-zA-Z0-9_-]{3,20}$/.test(id) || id === '__proto__') { message.textContent = 'IDは半角英数字、_、- の3〜20文字で入力してください。'; $('accountId').focus(); return; }
+        if (password.length < 8) { message.textContent = 'パスワードは8文字以上で入力してください。'; $('accountPassword').focus(); return; }
+        try {
+          if (!window.crypto || !window.crypto.subtle) throw new Error('SECURE_CONTEXT_REQUIRED');
+          if (authMode === 'register') {
+            if (Object.prototype.hasOwnProperty.call(accounts,id)) { message.textContent = 'このIDはすでに使われています。'; return; }
+            const salt = new Uint8Array(16); window.crypto.getRandomValues(salt);
+            const saltHex = bytesToHex(salt);
+            const role = Object.keys(accounts).length === 0 ? 'admin' : 'player';
+            accounts[id] = {salt:saltHex,hash:await passwordHash(password,saltHex),role:role,createdAt:new Date().toISOString()};
+            localStorage.setItem('table-accounts',JSON.stringify(accounts));
+            message.textContent = role === 'admin' ? '作成完了。最初のアカウントは管理者になります。' : 'アカウントを作成しました。';
+          } else {
+            const account = accounts[id];
+            if (!account || (await passwordHash(password,account.salt)) !== account.hash) { message.textContent = 'IDまたはパスワードが違います。'; return; }
+          }
+          user = {name:id,role:accounts[id].role};
+          localStorage.setItem('table-user',JSON.stringify(user));
+          $('accountPassword').value = '';
+          transitionWithLoader(boot);
+        } catch (error) {
+          message.textContent = error.message === 'SECURE_CONTEXT_REQUIRED' ? '安全な接続で開いてください（HTTPS または localhost）。' : '処理に失敗しました。もう一度お試しください。';
+        }
+      }
+      $('showRegister').onclick = function () { showAuthForm('register'); };
+      $('showLogin').onclick = function () { showAuthForm('login'); };
+      $('backAuth').onclick = function () { $('authForm').classList.add('hidden'); $('authGate').classList.remove('hidden'); $('accountPassword').value=''; };
+      $('submitAuth').onclick = submitAuth;
+      $('accountPassword').onkeydown = function (event) { if (event.key === 'Enter') submitAuth(); };
+      $('logout').onclick = function () { localStorage.removeItem('table-user'); user = null; $('app').classList.add('hidden'); transitionWithLoader(function () { $('authGate').classList.remove('hidden'); $('authForm').classList.add('hidden'); }); };
+      document.querySelectorAll('[data-page]').forEach(function (b) { b.onclick = function () { show(b.dataset.page); }; });
+      document.querySelectorAll('[data-open]').forEach(function (b) { b.onclick = function () { show(b.dataset.open); }; });
+      $('toggle').onclick = function () {
+        if (!state.started) { state.started = true; state.paused = false; }
+        else if (!user || user.role !== 'admin') return;
+        else state.paused = !state.paused;
+        renderTimer();
+      };
+      $('reset').onclick = function () { state.remaining = state.dealerMinutes * 60; state.started = false; state.paused = true; renderTimer(); };
+      $('nextDealerButton').onclick = function () { state.dealerIndex = (state.dealerIndex + 1) % players.length; state.remaining = state.dealerMinutes * 60; state.started = true; state.paused = false; renderTimer(); };
+      $('addRebuy').onclick = function () { $('rebuyPlayer').innerHTML = players.map(function (p) { return '<option>' + p + '</option>'; }).join(''); $('rebuyModal').showModal(); };
+      $('saveRebuy').onclick = function () { const p = $('rebuyPlayer').value, v = Number($('rebuyValue').value); if (v > 0) { state.entries[p] = (state.entries[p] || 0) + v; state.prize += v; renderTimer(); } };
+      $('saveResults').onclick = function () {
+        document.querySelectorAll('[data-player]').forEach(function (i) { const p=i.dataset.player,k=i.dataset.key; state.results[p]=state.results[p]||{}; state.results[p][k]=Number(i.value); if (k === 'busts') state.busts[p]=Number(i.value); });
+        save(); alert('精算結果を保存しました。');
+      };
+      document.querySelectorAll('.style-choice').forEach(function (b) { b.onclick = function () { selectedStyle=b.dataset.style; document.querySelectorAll('.style-choice').forEach(function(x){x.classList.toggle('selected',x===b);}); }; });
+      $('saveProfile').onclick = function () {
+        const displayName = $('profileName').value.trim() || user.name;
+        state.profiles[user.name] = {style:selectedStyle,displayName:displayName,photo:selectedPhoto};
+        $('userName').textContent = displayName;
+        localStorage.setItem('table-user', JSON.stringify(user)); save(); renderProfile(); renderTimer(); alert('プロフィールを保存しました。');
+      };
+      $('profilePhoto').onchange = function (event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function () {
+          const image = new Image();
+          image.onload = function () {
+            const canvas = document.createElement('canvas');
+            const side = Math.min(image.width, image.height, 512);
+            const x = (image.width - side) / 2, y = (image.height - side) / 2;
+            canvas.width = 512; canvas.height = 512;
+            canvas.getContext('2d').drawImage(image, x, y, side, side, 0, 0, 512, 512);
+            selectedPhoto = canvas.toDataURL('image/jpeg', 0.82);
+            $('avatarPreview').innerHTML = '<img alt="プロフィール写真" src="' + selectedPhoto + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+          };
+          image.src = String(reader.result);
+        };
+        reader.readAsDataURL(file);
+      };
+      $('removePhoto').onclick = function () {
+        selectedPhoto = '';
+        $('profilePhoto').value = '';
+        $('avatarPreview').textContent = '♠';
+      };
+      $('checkIn').onclick = function () {
+        if (!players.includes(user.name)) { alert('プロフィールの表示名を参加者名に合わせてください。'); return; }
+        state.checkins[user.name] = !state.checkins[user.name];
+        save(); renderTimer();
+      };
+      $('recordBust').onclick = function () {
+        if (!players.includes(user.name)) { alert('参加者名と表示名を合わせてください。'); return; }
+        state.busts[user.name] = (state.busts[user.name] || 0) + 1;
+        save(); renderProfile(); renderTimer();
+      };
+      function updateCashoutSummary() {
+        const starting = Number(state.startStack) || 1000;
+        const busts = Math.max(0,Number($('reportBusts').value) || 0);
+        const chips = Math.max(0,Number($('cashoutChips').value) || 0);
+        const total = starting * (busts + 1);
+        $('cashoutSummary').textContent = starting.toLocaleString() + '点スタート / ' + busts + '回飛び（合計' + total.toLocaleString() + '点投入） / ' + chips.toLocaleString() + '点残り';
+      }
+      $('reportCashout').onclick = function () {
+        const previous = state.reports[user.name];
+        $('reportBusts').value = previous ? previous.busts : (state.busts[user.name] || 0);
+        $('cashoutChips').value = previous ? previous.chips : '';
+        updateCashoutSummary();
+        $('cashoutModal').showModal();
+      };
+      $('reportBusts').oninput = updateCashoutSummary;
+      $('cashoutChips').oninput = updateCashoutSummary;
+      $('sendCashout').onclick = function () {
+        const chips = Number($('cashoutChips').value);
+        const busts = Math.max(0,Number($('reportBusts').value) || 0);
+        if (Number.isFinite(chips) && chips >= 0) {
+          state.busts[user.name] = busts;
+          state.reports[user.name] = {startStack:Number(state.startStack)||1000,busts:busts,chips:chips,status:'pending',submittedAt:new Date().toISOString()};
+          save(); renderProfile(); renderTimer();
+        }
+      };
+      $('saveSettings').onclick = function () {
+        state.dealerMinutes = Math.max(1,Number($('dealerMinutes').value)||30);
+        state.remaining = state.dealerMinutes*60; state.sb = Number($('settingSb').value)||100; state.bb = Number($('settingBb').value)||200;
+        const count = $('chipRows').querySelectorAll('[data-chip="color"]').length;
+        state.chips = Array.from({length:count}, function (_, i) {
+          return {color:$('chipRows').querySelector('[data-chip="color"][data-index="'+i+'"]').value, value:Number($('chipRows').querySelector('[data-chip="value"][data-index="'+i+'"]').value)||0, count:Number($('chipRows').querySelector('[data-chip="count"][data-index="'+i+'"]').value)||0};
+        });
+        state.startStack = Number($('startStack').value)||1000;
+        save(); renderTimer(); alert('ゲーム設定を保存しました。');
+      };
+      $('addPlayer').onclick = function () {
+        const name = prompt('追加するプレイヤー名');
+        if (name && !players.includes(name.trim())) { const p=name.trim(); players.push(p); state.entries[p]=0; state.results[p]={rank:players.length,chips:0,payout:0}; save(); renderAdmin(); renderTimer(); }
+      };
+      setInterval(function () { if (state.started && !state.paused && state.remaining > 0) { state.remaining--; renderTimer(); if (state.remaining === 0) { try { const a=new AudioContext(),o=a.createOscillator();o.frequency.value=880;o.connect(a.destination);o.start();o.stop(a.currentTime+.35); } catch(e) {} } } }, 1000);
+      window.setTimeout(function () {
+        $('loadingScreen').classList.add('hidden');
+        if (user && accounts[user.name] && accounts[user.name].role === user.role) boot();
+        else { user=null; localStorage.removeItem('table-user'); $('authGate').classList.remove('hidden'); }
+      }, 700);
+    }());
+  </script>
+</body>
+</html>
