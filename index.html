@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TABLE — Private Poker</title>
   <style>
+    #seatQrModal,#seatJoinModal{max-height:88dvh;border-radius:16px;box-shadow:0 20px 70px #24134240}#seatQrImage svg{width:min(100%,280px);height:auto;display:block;margin:auto}#seatQrModal .modal,#seatJoinModal .modal{border-top-color:#6148b8}#seatQrModal .save,#seatJoinModal .save{background:#6148b8;border-color:#6148b8}
     #playerEditor{width:min(94vw,460px);max-height:88dvh;border-radius:16px;box-shadow:0 20px 70px #24134240}#playerEditor .modal{border-top-color:#6148b8}#playerEditor .modal-actions{position:sticky;bottom:-23px;padding:14px 0;background:#fff;border-top:1px solid var(--line)}#playerEditor button:disabled{opacity:.45;cursor:not-allowed}#playerEditor .modal-actions .save{background:#6148b8;border-color:#6148b8}
     :root{--bg:#f4f7fb;--surface:#fff;--surface-2:#eef4ff;--line:#c8d6ed;--text:#082154;--dim:#55709d;--blue:#0458bf;--navy:#082a70;--red:#ec3044;--green:#17885a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;font-size:15px}button,input,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}
     #login{min-height:100vh;display:grid;place-items:center;padding:24px;position:relative;background:linear-gradient(90deg,rgba(4,36,102,.89),rgba(4,36,102,.48)),url('https://i2.pickpik.com/photos/413/584/970/gaming-casino-card-poker-a0146c034797250127ab75ce5a384c03.jpg') center/cover}.login-card{width:min(100%,410px);background:#fff;padding:34px;border-top:8px solid var(--red);box-shadow:12px 12px 0 rgba(1,22,69,.34)}.logo{font-size:13px;letter-spacing:.22em;font-weight:900;color:var(--blue);margin-bottom:46px}.login-card h1{font-size:32px;letter-spacing:-.05em;margin:0 0 9px}.login-card p{line-height:1.7;color:var(--dim);margin:0 0 28px}.field{display:grid;gap:8px;margin:15px 0}.field label{font-size:12px;color:var(--dim);font-weight:800}.field input,.field select{height:46px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--text);padding:0 13px;outline:none}.field input:focus{border-color:var(--blue)}.primary,.secondary{border:0;border-radius:4px;height:46px;padding:0 16px;font-weight:800}.primary{width:100%;background:var(--red);color:#fff}.primary:hover{background:#d92237}.secondary{background:var(--blue);border:1px solid var(--blue);color:#fff}.or{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:12px;margin:19px 0}.or:before,.or:after{content:"";height:1px;background:var(--line);flex:1}.note{font-size:12px;color:#747f91;margin-top:20px}
@@ -62,26 +63,52 @@
 </head>
 <body>
   <section id="authGate" class="hidden"><div class="auth-card"><div class="logo">TABLE</div><h1>今夜のテーブルへ</h1><p>アカウントを作成するか、作成済みのIDでログインしてください。</p><div class="auth-actions"><button class="primary" id="showRegister">アカウントを作成</button><button class="secondary" id="showLogin">ログイン</button></div><p class="note">この試作版のアカウント情報は、このブラウザ内に保存されます。</p></div></section>
-  <section id="authForm" class="hidden"><div class="auth-card"><div class="logo">TABLE</div><h1 id="authTitle">ログイン</h1><p id="authDescription">アカウントIDとパスワードを入力してください。</p><div class="field"><label for="accountId">アカウントID</label><input id="accountId" autocomplete="username" minlength="3" maxlength="20" placeholder="例：yuta_01" required></div><div class="field"><label for="accountPassword">パスワード</label><input id="accountPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8文字以上" required></div><button class="primary auth-submit" id="submitAuth">ログイン</button><button class="auth-back" id="backAuth">戻る</button><p class="auth-message" id="authMessage" role="status"></p></div></section>
+<section id="authForm" class="hidden"><div class="auth-card"><div class="logo">TABLE</div><h1 id="authTitle">ログイン</h1><p id="authDescription">アカウントIDとパスワードを入力してください。</p><div class="field"><label for="accountId">アカウントID</label><input id="accountId" autocomplete="username" minlength="3" maxlength="20" placeholder="例：yuta_01" required></div><div class="field"><label for="accountPassword">パスワード</label><input id="accountPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8文字以上" required></div><div class="field hidden" id="setupCodeField"><label for="setupCode">初回管理者設定コード</label><input id="setupCode" type="password" autocomplete="off"><span class="history">管理者が用意した初回設定コードを入力します。最初の管理者を作る時だけ必要です。</span></div><button class="primary auth-submit" id="submitAuth">ログイン</button><button class="auth-back" id="backAuth">戻る</button><p class="auth-message" id="authMessage" role="status"></p></div></section>
   <div id="loadingScreen"><div class="loading-content"><span class="loading-spade">♠</span><div class="loading-dots">TABLE　·　LOADING</div></div></div>
+  <section id="startupError" class="hidden" style="position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:#f7f4fc;padding:24px"><div class="auth-card"><div class="logo">TABLE</div><h1 style="font-size:24px">読み込めませんでした</h1><p id="startupErrorMessage" role="alert"></p><button class="primary" id="retryStartup" type="button">もう一度読み込む</button><p class="note">アカウント・成績データは削除しません。</p></div></section>
   <section id="app" class="hidden">
-    <nav class="nav"><div class="nav-logo">TABLE</div><button data-page="home">ホーム</button><button data-page="timer">交代タイマー</button><button data-page="my">マイページ</button><button data-page="dashboard">ランキング</button><button data-page="results" class="admin-only">精算</button><button data-page="admin" class="admin-only">設定</button><div class="account"><span><b id="userName"></b><small id="userEmail" class="account-mail"></small></span><span class="admin-badge admin-only">ADMIN</span><button id="logout">ログアウト</button></div></nav>
+    <nav class="nav"><div class="nav-logo">TABLE</div><button data-page="home">ホーム</button><button data-page="timer">交代タイマー</button><button data-page="my">マイページ</button><button data-page="dashboard">ランキング</button><button data-page="results" class="admin-only">結果入力</button><button data-page="admin" class="admin-only">設定</button><div class="account"><span><b id="userName"></b><small id="userEmail" class="account-mail"></small></span><span class="admin-badge admin-only">ADMIN</span><button id="logout">ログアウト</button></div></nav>
     <nav class="mobile-tabs"><button data-page="home"><span>⌂</span>ホーム</button><button data-page="timer"><span>◷</span>交代</button><button data-page="my"><span>☺</span>マイページ</button><button data-page="dashboard"><span>♙</span>ランキング</button><button data-page="admin" class="admin-only"><span>⚙</span>設定</button></nav>
     <main class="wrap">
-      <section id="homePage" class="page"><section class="home-photo"><div><h1>今夜のゲーム</h1><p>参加者 <span id="homePlayerCount">0</span> 名</p></div></section><section class="current-rank"><div class="rank-avatar" id="homeRankAvatar">♠</div><div class="rank-copy"><small>今夜のあなたの順位</small><b id="homeRankName">—</b></div><strong class="position" id="homeRankValue">—</strong><span class="rank-profit" id="homeRankProfit">結果未登録</span></section><div class="home-links"><button class="home-link" data-open="timer"><div class="home-icon">◷</div><strong>ディーラー交代タイマー</strong><span>次の交代まで <b id="homeTimer">30:00</b></span></button><button class="home-link" id="checkIn"><div class="home-icon">✓</div><strong>参加チェックイン</strong><span id="checkInStatus">参加する場合はタップ</span></button><button class="home-link" data-open="my"><div class="home-icon">♙</div><strong>自分の成績</strong><span>収支・参加履歴・プレイスタイル</span></button><button class="home-link" data-open="dashboard"><div class="home-icon">♧</div><strong>ランキング</strong><span>みんなの累計収支と参加回数</span></button><button class="home-link admin-only" data-open="admin"><div class="home-icon">⚙</div><strong>ゲーム設定</strong><span>チップ・参加者・交代時間</span></button><button class="home-link admin-only" data-open="results"><div class="home-icon">✓</div><strong>精算を入力</strong><span>終了時の持ち点と順位を確定</span></button></div><div class="photo-grid"><article class="photo-card" style="background-image:url('https://www.casinos.at/fileadmin/_processed_/8/a/csm_ps250828_26_0241_R1_de000d242f.jpg')"><div><h3>今夜のテーブル</h3><p>キャッシュゲーム · ノーリミットホールデム</p></div></article><article class="photo-card" style="background-image:url('https://www.redtoothpoker.com/images/Chips.jpg')"><div><h3>チップとルール</h3><p>詳しくはゲーム設定から確認できます</p></div></article></div></section>
-      <section id="timerPage" class="page hidden"><div class="page-head"><div><h1>ディーラー交代</h1><p>交代のタイミングをみんなで確認できます。</p></div><div class="status" id="gameStatus">開始前</div></div><div class="timer-layout"><section class="timer-main"><div class="dealer-label">次の交代まで</div><div class="time" id="time">30:00</div><p class="dealer-hint">スタートを押すと計測を始めます</p><div class="blind-row"><div><span>現在のディーラー</span><b id="dealerName">—</b></div><div><span>次のディーラー</span><b id="nextDealer">—</b></div></div></section><aside class="side"><section class="card"><h2>タイマー操作</h2><div class="control-grid"><button id="toggle" class="wide play">スタート</button><button id="reset" class="admin-only">時間を戻す</button><button id="nextDealerButton" class="admin-only">交代する</button><button id="addRebuy" class="admin-only">追加バイイン</button></div></section><section class="card"><h2>参加プレイヤー</h2><div id="playerList"></div></section></aside></div><div class="summary"><div class="metric"><small>ゲーム形式</small><b>キャッシュゲーム</b></div><div class="metric"><small>ブラインド</small><b>¥<span data-setting="sb">100</span> / ¥<span data-setting="bb">200</span></b></div><div class="metric"><small>参加人数</small><b id="playerCount">0 名</b></div></div></section>
-      <section id="resultsPage" class="page hidden"><div class="page-head"><div><h1>キャッシュアウトを記録</h1><p>スタート持ち点・飛び回数・終了時の持ち点を確認します。</p></div><button class="primary" style="width:auto" id="saveResults">結果を保存</button></div><section class="card"><h2>今回のゲーム</h2><div class="result-form" id="resultsForm"></div></section></section>
-      <section id="dashboardPage" class="page hidden"><div class="page-head"><div><h1>ランキング</h1><p>参加メンバーの成績</p></div></div><section class="current-rank"><div class="rank-avatar" id="rankingMyAvatar">♠</div><div class="rank-copy"><small>今夜のあなたの順位</small><b id="rankingMyName">—</b></div><strong class="position" id="rankingMyValue">—</strong><span class="rank-profit" id="rankingMyProfit">¥0</span></section><div class="dashboard-grid" style="margin-top:14px"><section class="card"><h2>累計収支</h2><table class="table"><thead><tr><th>順位</th><th>プレイヤー</th><th>参加</th><th>勝率</th><th>収支</th></tr></thead><tbody id="ranking"></tbody></table></section><section class="card"><h2>開催履歴</h2><div class="history" id="gameHistory"><p>まだ開催履歴はありません。</p></div></section></div></section>
-      <section id="myPage" class="page hidden"><div class="page-head"><div><h1>マイページ</h1><p>プロフィールと成績を確認・編集できます。</p></div><button class="primary" style="width:auto" id="saveProfile">プロフィールを保存</button></div><section class="card"><div class="profile-avatar" id="avatarPreview">♠</div><div class="field"><label>表示名</label><input id="profileName"></div><div class="field"><label for="profilePhoto">プロフィール写真（任意）</label><input id="profilePhoto" type="file" accept="image/*"><span style="color:var(--dim);font-size:12px">写真を設定しない場合はスペードで表示します。画像は自動で縮小します。</span><button class="text-button" type="button" id="removePhoto">写真を削除して♠に戻す</button></div><h2 style="margin-top:25px">プレイスタイル</h2><p style="color:var(--dim);font-size:13px">自分のプレイに近いものを選びましょう。</p><div class="style-picker" id="stylePicker"><button class="style-choice" data-style="アグレッシブ">🔥 アグレッシブ</button><button class="style-choice" data-style="堅実派">🧠 堅実派</button><button class="style-choice" data-style="ブラフ好き">🎭 ブラフ好き</button><button class="style-choice" data-style="初心者">🌱 初心者</button><button class="style-choice" data-style="エンジョイ勢">🍻 エンジョイ勢</button></div><div class="bust-box"><div><small>今回の飛び回数</small><b><span id="myBustCount">0</span> 回</b></div><button id="recordBust">飛んだ +1</button></div><button class="secondary" style="margin-top:12px" id="reportCashout">終了時の持ち点を申告</button><p id="reportStatus" style="color:var(--dim);font-size:13px"></p></section><div class="summary"><div class="metric"><small>累計収支</small><b id="myProfit">¥0</b></div><div class="metric"><small>参加回数</small><b id="myGames">0 回</b></div><div class="metric"><small title="収支がプラスだったゲームの割合">勝率</small><b id="myWinRate">0%</b></div></div><section class="card" style="margin-top:18px"><h2>最近のプレイ</h2><div id="recentPlays"><p class="history">まだプレイ記録はありません。</p></div></section></section>
-      <section id="adminPage" class="page hidden"><div class="page-head"><div><h1>ゲーム設定</h1><p>チップ構成、ブラインド、交代タイミングを設定できます。</p></div><button class="primary" style="width:auto" id="saveSettings">設定を保存</button></div><div class="dashboard-grid"><section class="card"><h2>チップ構成</h2><div class="chip-builder"><b>色</b><b>額面</b><b>枚数 / 人</b><div id="chipRows" style="display:contents"></div></div><div class="setting-list" style="margin-top:24px"><div class="setting-row"><div><label>スモールブラインド</label><span>SB</span></div><input id="settingSb" type="number" value="100"></div><div class="setting-row"><div><label>ビッグブラインド</label><span>BB</span></div><input id="settingBb" type="number" value="200"></div><div class="setting-row"><div><label>ディーラー交代時間</label><span>何分ごとに交代するか</span></div><input id="dealerMinutes" type="number" min="1" value="30"></div><div class="setting-row"><div><label>開始持ち点</label><span>プレイヤー1人の最初の持ち点</span></div><input id="startStack" type="number" min="1" value="1000"></div></div></section><section class="card"><h2>参加者管理</h2><div id="adminPlayers"></div><button class="secondary" style="width:100%;margin-top:15px" id="addPlayer">参加者を追加</button><h2 style="margin-top:28px">チップ申告の確認</h2><div id="reportList"></div><h2 style="margin-top:28px">公開設定</h2><div class="setting-list"><div class="setting-row"><div><label>収支ランキングを公開</label><span>プレイヤー画面に表示</span></div><input type="checkbox" checked aria-label="ランキングを公開"></div></div></section></div></section>
+      <p class="currency-note" style="color:var(--dim);font-size:12px;margin:0 0 18px">ポーカードル（PD）はゲーム内専用通貨です。現金への換金・賞品への交換はできません。</p>
+<section id="homePage" class="page"><section class="home-photo"><div><h1>今夜のゲーム</h1><p>着席中 <span id="homePlayerCount">0</span> 名</p></div></section><section class="current-rank"><div class="rank-avatar" id="homeRankAvatar">♠</div><div class="rank-copy"><small>今夜のあなたの順位</small><b id="homeRankName">—</b></div><strong class="position" id="homeRankValue">—</strong><span class="rank-profit" id="homeRankProfit">結果未登録</span></section><div class="home-links"><button class="home-link" data-open="timer"><div class="home-icon">◷</div><strong>ディーラー交代タイマー</strong><span>次の交代まで <b id="homeTimer">30:00</b></span></button><button class="home-link" id="checkIn"><div class="home-icon">✓</div><strong>参加キーで席に座る</strong><span id="checkInStatus">管理者から参加キーを教えてもらう</span></button><button class="home-link" data-open="my"><div class="home-icon">♙</div><strong>自分の成績</strong><span>PD増減・参加履歴・プレイスタイル</span></button><button class="home-link" data-open="dashboard"><div class="home-icon">♧</div><strong>ランキング</strong><span>みんなの累計PD増減と参加回数</span></button><button class="home-link admin-only" data-open="admin"><div class="home-icon">⚙</div><strong>ゲーム設定</strong><span>チップ・参加者・交代時間</span></button><button class="home-link admin-only" data-open="results"><div class="home-icon">✓</div><strong>結果を入力</strong><span>終了時の持ち点と順位を確定</span></button></div><div class="photo-grid"><article class="photo-card" style="background-image:url('https://www.casinos.at/fileadmin/_processed_/8/a/csm_ps250828_26_0241_R1_de000d242f.jpg')"><div><h3>今夜のテーブル</h3><p>ポーカードルで遊ぶ · ノーリミットホールデム</p></div></article><article class="photo-card" style="background-image:url('https://www.redtoothpoker.com/images/Chips.jpg')"><div><h3>チップとルール</h3><p>詳しくはゲーム設定から確認できます</p></div></article></div></section>
+      <section id="timerPage" class="page hidden"><div class="page-head"><div><h1>ディーラー交代</h1><p>交代のタイミングをみんなで確認できます。</p></div><div class="status" id="gameStatus">開始前</div></div><div class="timer-layout"><section class="timer-main"><div class="dealer-label">次の交代まで</div><div class="time" id="time">30:00</div><p class="dealer-hint">スタートを押すと計測を始めます</p><div class="blind-row"><div><span>現在のディーラー</span><b id="dealerName">—</b></div><div><span>次のディーラー</span><b id="nextDealer">—</b></div></div></section><aside class="side"><section class="card"><h2>タイマー操作</h2><div class="control-grid"><button id="toggle" class="wide play">スタート</button><button id="reset" class="admin-only">時間を戻す</button><button id="nextDealerButton" class="admin-only">交代する</button><button id="addRebuy" class="admin-only">PDを追加</button></div></section><section class="card"><h2>参加プレイヤー</h2><div id="playerList"></div></section></aside></div><div class="summary"><div class="metric"><small>ゲーム形式</small><b>ポーカードルゲーム</b></div><div class="metric"><small>ブラインド</small><b><span data-setting="sb">100</span> / <span data-setting="bb">200</span> PD</b></div><div class="metric"><small>参加人数</small><b id="playerCount">0 名</b></div></div></section>
+      <section id="resultsPage" class="page hidden"><div class="page-head"><div><h1>終了時のPDを記録</h1><p>スタート持ち点・飛び回数・終了時の持ち点を確認します。</p></div><button class="primary" style="width:auto" id="saveResults">結果を保存</button></div><section class="card"><h2>今回のゲーム</h2><div class="result-form" id="resultsForm"></div></section></section>
+      <section id="dashboardPage" class="page hidden"><div class="page-head"><div><h1>ランキング</h1><p>参加メンバーの成績</p></div></div><section class="current-rank"><div class="rank-avatar" id="rankingMyAvatar">♠</div><div class="rank-copy"><small>今夜のあなたの順位</small><b id="rankingMyName">—</b></div><strong class="position" id="rankingMyValue">—</strong><span class="rank-profit" id="rankingMyProfit">0 PD</span></section><div class="dashboard-grid" style="margin-top:14px"><section class="card"><h2>累計PD増減</h2><table class="table"><thead><tr><th>順位</th><th>プレイヤー</th><th>参加</th><th>勝率</th><th>PD増減</th></tr></thead><tbody id="ranking"></tbody></table></section><section class="card"><h2>開催履歴</h2><div class="history" id="gameHistory"><p>まだ開催履歴はありません。</p></div></section></div></section>
+      <section id="myPage" class="page hidden"><div class="page-head"><div><h1>マイページ</h1><p>プロフィールと成績を確認・編集できます。</p></div><button class="primary" style="width:auto" id="saveProfile">プロフィールを保存</button></div><section class="card"><div class="profile-avatar" id="avatarPreview">♠</div><div class="field"><label>表示名</label><input id="profileName"></div><div class="field"><label for="profilePhoto">プロフィール写真（任意）</label><input id="profilePhoto" type="file" accept="image/*"><span style="color:var(--dim);font-size:12px">写真を設定しない場合はスペードで表示します。画像は自動で縮小します。</span><button class="text-button" type="button" id="removePhoto">写真を削除して♠に戻す</button></div><h2 style="margin-top:25px">プレイスタイル</h2><p style="color:var(--dim);font-size:13px">自分のプレイに近いものを選びましょう。</p><div class="style-picker" id="stylePicker"><button class="style-choice" data-style="アグレッシブ">🔥 アグレッシブ</button><button class="style-choice" data-style="堅実派">🧠 堅実派</button><button class="style-choice" data-style="ブラフ好き">🎭 ブラフ好き</button><button class="style-choice" data-style="初心者">🌱 初心者</button><button class="style-choice" data-style="エンジョイ勢">🍻 エンジョイ勢</button></div><div class="bust-box"><div><small>今回の飛び回数</small><b><span id="myBustCount">0</span> 回</b></div><button id="recordBust">飛んだ +1</button></div><button class="secondary" style="margin-top:12px" id="reportCashout">終了時の持ち点を申告</button><p id="reportStatus" style="color:var(--dim);font-size:13px"></p></section><div class="summary"><div class="metric"><small>累計PD増減</small><b id="myProfit">0 PD</b></div><div class="metric"><small>参加回数</small><b id="myGames">0 回</b></div><div class="metric"><small title="PDが増えたゲームの割合">勝率</small><b id="myWinRate">0%</b></div></div><section class="card" style="margin-top:18px"><h2>最近のプレイ</h2><div id="recentPlays"><p class="history">まだプレイ記録はありません。</p></div></section></section>
+<section id="adminPage" class="page hidden"><div class="page-head"><div><h1>ゲーム設定</h1><p>チップ構成、ブラインド、交代タイミングを設定できます。</p></div><button class="primary" style="width:auto" id="saveSettings">設定を保存</button></div><div class="dashboard-grid"><section class="card"><h2>チップ構成</h2><div class="chip-builder"><b>色</b><b>額面</b><b>枚数 / 人</b><div id="chipRows" style="display:contents"></div></div><div class="setting-list" style="margin-top:24px"><div class="setting-row"><div><label>スモールブラインド</label><span>SB</span></div><input id="settingSb" type="number" value="100"></div><div class="setting-row"><div><label>ビッグブラインド</label><span>BB</span></div><input id="settingBb" type="number" value="200"></div><div class="setting-row"><div><label>ディーラー交代時間</label><span>何分ごとに交代するか</span></div><input id="dealerMinutes" type="number" min="1" value="30"></div><div class="setting-row"><div><label>開始持ち点</label><span>プレイヤー1人の最初の持ち点</span></div><input id="startStack" type="number" min="1" value="1000"></div></div></section><section class="card"><h2>着席受付</h2><p class="history">今日の参加キーを管理者が表示します。日本時間の翌日0時に自動退席します。</p><button type="button" id="displaySeatQr" class="secondary" style="width:100%;margin-bottom:24px">参加キーを表示</button><h2>プレイヤー・権限管理</h2><div id="adminPlayers"></div><button class="secondary" style="width:100%;margin-top:15px" id="addPlayer">参加者を追加</button><h2 style="margin-top:28px">チップ申告の確認</h2><div id="reportList"></div><h2 style="margin-top:28px">公開設定</h2><div class="setting-list"><div class="setting-row"><div><label>収支ランキングを公開</label><span>プレイヤー画面に表示</span></div><input type="checkbox" checked aria-label="ランキングを公開"></div></div></section></div></section>
     </main>
   </section>
-  <dialog id="rebuyModal"><form method="dialog" class="modal"><h2>追加バイイン</h2><p>プレイヤーの投入額に追加して記録します。</p><div class="field"><label>プレイヤー</label><select id="rebuyPlayer"></select></div><div class="field"><label>金額</label><input id="rebuyValue" type="number" min="500" step="500" value="3000"></div><div class="modal-actions"><button value="cancel">キャンセル</button><button class="save" id="saveRebuy" value="default">追加する</button></div></form></dialog>
-  <dialog id="cashoutModal"><form method="dialog" class="modal"><h2>終了時の持ち点を申告</h2><p>スタート持ち点、飛び回数、最後に残った点数を記録します。</p><div class="report-summary" id="cashoutSummary">1,000点スタート / 0回飛び / 0点残り</div><div class="field"><label for="reportBusts">飛んだ回数</label><input id="reportBusts" type="number" min="0" step="1" value="0" required></div><div class="field"><label for="cashoutChips">最後に残った持ち点</label><input id="cashoutChips" type="number" min="0" step="1" placeholder="例：500" required></div><div class="modal-actions"><button value="cancel">あとで</button><button class="save" id="sendCashout" value="default">この内容で申告</button></div></form></dialog>
-  <dialog id="playerEditor"><form id="playerEditForm" class="modal"><h2>プレイヤーを編集</h2><p id="editPlayerId"></p><p class="history">金額は円、持ち点はチップの点数です。保存すると成績にも反映されます。</p><div class="field"><label for="editDisplayName">表示名</label><input id="editDisplayName" maxlength="40" required></div><div class="field"><label for="editStyle">プレイスタイル</label><select id="editStyle"><option>アグレッシブ</option><option>堅実派</option><option>ブラフ好き</option><option>初心者</option><option>エンジョイ勢</option></select></div><label><input id="editParticipating" type="checkbox"> 今回の参加者に含める</label><div class="field"><label for="editEntry">今回の投入金額（バイイン合計・円）</label><input id="editEntry" type="number" min="0" step="1" required></div><div class="field"><label for="editStartStack">開始持ち点</label><input id="editStartStack" type="number" min="1" step="1" required></div><div class="field"><label for="editBusts">飛び回数</label><input id="editBusts" type="number" min="0" step="1" required></div><div class="field"><label for="editChips">現在 / 終了時の持ち点</label><input id="editChips" type="number" min="0" step="1" required></div><div class="field"><label for="editPayout">今回の精算額（受け取った金額・円）</label><input id="editPayout" type="number" min="0" step="1" required></div><p id="editProfitPreview" class="report-summary" aria-live="polite"></p><h2>過去の記録</h2><div id="editHistory"></div><p id="editError" role="alert" class="negative"></p><div class="modal-actions"><button type="button" id="cancelPlayerEdit">キャンセル</button><button type="submit" class="save">変更を保存</button></div><button type="button" id="deletePlayerAccount" class="text-button" style="color:#bb2948;margin-top:20px">このプレイヤーを削除</button></form></dialog>
-  <script src="assets/app-data.js?v=4"></script>
+  <dialog id="rebuyModal"><form method="dialog" class="modal"><h2>PDを追加</h2><p>プレイヤーの投入PDに追加して記録します。ポーカードルは換金できないゲーム内通貨です。</p><div class="field"><label>プレイヤー</label><select id="rebuyPlayer"></select></div><div class="field"><label>追加するポーカードル（PD）</label><input id="rebuyValue" type="number" min="500" step="500" value="3000"></div><div class="modal-actions"><button value="cancel">キャンセル</button><button class="save" id="saveRebuy" value="default">追加する</button></div></form></dialog>
+  <dialog id="cashoutModal"><form method="dialog" class="modal"><h2>終了時の持ち点を申告</h2><p>スタート持ち点、飛び回数、最後に残った点数を記録します。</p><div class="report-summary" id="cashoutSummary">1,000 PDスタート / 0回飛び / 0 PD残り</div><div class="field"><label for="reportBusts">飛んだ回数</label><input id="reportBusts" type="number" min="0" step="1" value="0" required></div><div class="field"><label for="cashoutChips">最後に残った持ち点</label><input id="cashoutChips" type="number" min="0" step="1" placeholder="例：500" required></div><div class="modal-actions"><button value="cancel">あとで</button><button class="save" id="sendCashout" value="default">この内容で申告</button></div></form></dialog>
+<dialog id="playerEditor"><form id="playerEditForm" class="modal"><h2>プレイヤーを編集</h2><p id="editPlayerId"></p><p class="history">通貨はポーカードル（PD）です。現金への換金・賞品への交換はできません。保存すると成績にも反映されます。</p><div class="field"><label for="editDisplayName">表示名</label><input id="editDisplayName" maxlength="40" required></div><div class="field"><label for="editStyle">プレイスタイル</label><select id="editStyle"><option>アグレッシブ</option><option>堅実派</option><option>ブラフ好き</option><option>初心者</option><option>エンジョイ勢</option></select></div><div class="field"><label for="editRole">アカウントの権限</label><select id="editRole"><option value="player">一般プレイヤー</option><option value="admin">管理者</option></select><span class="history">管理者はPDの編集・削除・権限変更・参加キー発行ができます。</span></div><label><input id="editParticipating" type="checkbox"> 今日の席に座っている</label><div class="field"><label for="editEntry">今回の投入PD（参加・追加の合計）</label><input id="editEntry" type="number" min="0" step="1" required></div><div class="field"><label for="editStartStack">開始持ち点</label><input id="editStartStack" type="number" min="1" step="1" required></div><div class="field"><label for="editBusts">飛び回数</label><input id="editBusts" type="number" min="0" step="1" required></div><div class="field"><label for="editChips">現在 / 終了時の持ち点</label><input id="editChips" type="number" min="0" step="1" required></div><div class="field"><label for="editPayout">終了時の回収PD</label><input id="editPayout" type="number" min="0" step="1" required></div><p id="editProfitPreview" class="report-summary" aria-live="polite"></p><h2>過去の記録</h2><div id="editHistory"></div><p id="editError" role="alert" class="negative"></p><div class="modal-actions"><button type="button" id="cancelPlayerEdit">キャンセル</button><button type="submit" class="save">変更を保存</button></div><button type="button" id="deletePlayerAccount" class="text-button" style="color:#bb2948;margin-top:20px">このプレイヤーを削除</button></form></dialog>
   <script>
     (function () {
+      let ready = false;
+      function fail(message) {
+        ready = true;
+        window.clearTimeout(watchdog);
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('startupErrorMessage').textContent = message;
+        document.getElementById('startupError').classList.remove('hidden');
+      }
+      const watchdog = window.setTimeout(function () {
+        if (!ready) fail('読み込みが完了しませんでした。通信状態を確認して、もう一度読み込んでください。');
+      },12000);
+      window.TableStartup = {fail:fail,done:function () { ready=true; window.clearTimeout(watchdog); }};
+      document.getElementById('retryStartup').onclick = function () { window.location.reload(); };
+    }());
+  </script>
+  <dialog id="seatQrModal"><div class="modal"><h2>今日の参加キー</h2><p>このキーを友達に伝えてください。ホームの「参加キーで席に座る」から入力できます。</p><div id="seatQrImage" style="font-size:32px;font-weight:900;letter-spacing:.15em;text-align:center;padding:20px 0;color:var(--blue)" aria-live="polite"></div><p id="seatQrDay" class="report-summary"></p><p class="note" id="seatCodeStorageNote">直接ファイルを開いた場合は同じブラウザ内の試作動作です。共有サーバーで開くと別スマホでも使えます。</p><p id="seatQrError" role="alert"></p><div class="modal-actions"><button id="renewSeatQr" type="button">キーを再発行</button><button id="closeSeatQr" type="button" class="save">閉じる</button></div></div></dialog>
+  <dialog id="seatJoinModal"><form id="seatJoinForm" class="modal"><h2>参加キーで席に座る</h2><p>管理者から教えてもらった8文字の参加キーを入力してください。</p><div class="field"><label for="seatJoinLink">今日の参加キー</label><input id="seatJoinLink" placeholder="例：ABCD2345" autocapitalize="characters" autocomplete="off" spellcheck="false" maxlength="16" required></div><p id="seatJoinMessage" role="alert"></p><p class="note">着席は当日限り。日本時間の翌日0時に自動で退席します。成績とPD記録は残ります。</p><div class="modal-actions"><button id="cancelSeatJoin" type="button">キャンセル</button><button class="save" type="submit">席に座る</button></div></form></dialog>
+  <script src="assets/runtime-config.js"></script>
+  <script src="assets/shared-api.js"></script>
+  <script src="assets/app-data.js?v=7" onerror="window.TableStartup.fail('必要なファイルを取得できませんでした。通信状態を確認して、もう一度読み込んでください。')"></script>
+  <script>
+    (async function () {
+      try {
+      const shared = window.TABLE_SHARED === true;
+      const sharedSession = shared ? await window.TableAPI.request('/api/session') : null;
       const $ = function (id) { return document.getElementById(id); };
       const menuIcons = {
         home: '<path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/>',
@@ -103,31 +130,53 @@
       document.querySelectorAll('.mobile-tabs button').forEach(function (button) {
         button.querySelector('span').innerHTML = menuIcon(button.dataset.page);
       });
-      const savedState = JSON.parse(localStorage.getItem('table-state') || 'null') || {};
-      const savedPlayers = JSON.parse(localStorage.getItem('table-players') || 'null') || [];
-      const accounts = JSON.parse(localStorage.getItem('table-accounts') || '{}') || {};
+      const savedState = shared ? sharedSession.state || {} : JSON.parse(localStorage.getItem('table-state') || 'null') || {};
+      const savedPlayers = shared ? sharedSession.players || [] : JSON.parse(localStorage.getItem('table-players') || 'null') || [];
+      const accounts = shared ? sharedSession.accounts || {} : JSON.parse(localStorage.getItem('table-accounts') || '{}') || {};
       const initialized = TableData.initialize(savedState,savedPlayers,accounts);
       let state = initialized.state;
       let players = initialized.players;
-      if (initialized.cleanupChanged && !localStorage.getItem('table-before-sample-cleanup-v3')) {
+      if (!shared && initialized.cleanupChanged && !localStorage.getItem('table-before-sample-cleanup-v3')) {
         localStorage.setItem('table-before-sample-cleanup-v3',JSON.stringify({state:savedState,players:savedPlayers}));
       }
-      let user = JSON.parse(localStorage.getItem('table-user') || 'null');
+      let user = shared ? sharedSession.user : JSON.parse(localStorage.getItem('table-user') || 'null');
       let authMode = 'login';
       let authBusy = false;
       let selectedStyle = 'エンジョイ勢';
       let selectedPhoto = '';
       let editingPlayer = null;
       function isAdmin() { return Boolean(user && accounts[user.name] && accounts[user.name].role === 'admin'); }
-      const money = function (n) { return '¥' + new Intl.NumberFormat('ja-JP').format(Number(n) || 0); };
+      const formatPD = function (n) { return new Intl.NumberFormat('ja-JP').format(Number(n) || 0) + ' PD'; };
       const escapeHtml = function (value) { return String(value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
       function avatarMarkup(name, className) {
         const profile = profileFor(name);
-        const content = profile.photo ? '<img alt="" src="' + profile.photo + '">' : '♠';
+        const content = profile.photo ? '<img alt="" src="' + escapeHtml(profile.photo) + '">' : '♠';
         return '<span class="' + className + '">' + content + '</span>';
       }
-      const save = function () { localStorage.setItem('table-state', JSON.stringify(state)); localStorage.setItem('table-players', JSON.stringify(players)); };
-      save();
+      function applyShared(data) {
+        state=data.state; players=data.players;
+        Object.keys(accounts).forEach(function(name){delete accounts[name];}); Object.assign(accounts,data.accounts);
+        user=data.user;
+        document.querySelectorAll('.admin-only').forEach(function(el){el.classList.toggle('hidden',!isAdmin());});
+      }
+      const save = function (options) {
+        if (!shared) { localStorage.setItem('table-state', JSON.stringify(state)); localStorage.setItem('table-players', JSON.stringify(players)); return true; }
+        $('loadingScreen').classList.remove('hidden');
+        return window.TableAPI.write(Object.assign({state:state,players:players,accounts:accounts},options)).then(function(data){applyShared(data);return true;}).catch(async function(error){
+          alert(error.message);
+          try { const data=await window.TableAPI.request('/api/session'); if(data.user){applyShared(data);renderTimer();} else {user=null;$('app').classList.add('hidden');$('authGate').classList.remove('hidden');} } catch (_) {}
+          return false;
+        }).finally(function(){$('loadingScreen').classList.add('hidden');});
+      };
+      function persistThen(callback, options) {
+        if (!shared) { save(); callback(); return; }
+        save(options).then(function(ok){if(ok)callback();});
+      }
+      if (!shared) save();
+      if (shared) {
+        $('seatCodeStorageNote').textContent='共有サーバーに接続中。参加キーは翌日0時まで有効です。';
+        const note=$('authGate').querySelector('.note'); if(note)note.textContent='アカウント・着席・成績は共有サーバーに保存されます。';
+      }
       function show(page) {
         if ((page === 'admin' || page === 'results') && !isAdmin()) return;
         document.querySelectorAll('.page').forEach(function (el) { el.classList.add('hidden'); });
@@ -144,48 +193,50 @@
         selectedStyle = p.style;
         $('profileName').value = p.displayName || user.name;
         selectedPhoto = p.photo || '';
-        $('avatarPreview').innerHTML = selectedPhoto ? '<img alt="プロフィール写真" src="' + selectedPhoto + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '♠';
+        $('avatarPreview').innerHTML = selectedPhoto ? '<img alt="プロフィール写真" src="' + escapeHtml(selectedPhoto) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '♠';
         document.querySelectorAll('.style-choice').forEach(function (b) { b.classList.toggle('selected', b.dataset.style === selectedStyle); });
         const stats = TableData.statsFor(user.name,state);
-        $('myProfit').textContent = (stats.profit > 0 ? '+' : '') + money(stats.profit);
+        $('myProfit').textContent = (stats.profit > 0 ? '+' : '') + formatPD(stats.profit);
         $('myGames').textContent = stats.games + ' 回';
         $('myWinRate').textContent = stats.winRate + '%';
         $('recentPlays').innerHTML = stats.recent.length ? stats.recent.map(function (game) {
-          return '<div class="player"><span>' + escapeHtml(new Date(game.playedAt).toLocaleDateString('ja-JP')) + ' · ' + escapeHtml(game.title) + '</span><span class="' + (game.profit < 0 ? 'negative' : 'positive') + '">' + (game.profit > 0 ? '+' : '') + money(game.profit) + '</span></div>';
+          return '<div class="player"><span>' + escapeHtml(new Date(game.playedAt).toLocaleDateString('ja-JP')) + ' · ' + escapeHtml(game.title) + '</span><span class="' + (game.profit < 0 ? 'negative' : 'positive') + '">' + (game.profit > 0 ? '+' : '') + formatPD(game.profit) + '</span></div>';
         }).join('') : '<p class="history">まだプレイ記録はありません。</p>';
         $('myBustCount').textContent = state.busts[user.name] || 0;
         const report = state.reports[user.name];
-        $('reportStatus').textContent = report ? (Number(report.startStack || state.startStack || 1000)).toLocaleString() + '点スタート / ' + Number(report.busts || 0) + '回飛び / ' + Number(report.chips || 0).toLocaleString() + '点残り · ' + (report.status === 'approved' ? '確認済み' : '管理者確認待ち') : '';
+        $('reportStatus').textContent = report ? (Number(report.startStack || state.startStack || 1000)).toLocaleString() + ' PDスタート / ' + Number(report.busts || 0) + '回飛び / ' + Number(report.chips || 0).toLocaleString() + ' PD残り · ' + (report.status === 'approved' ? '確認済み' : '管理者確認待ち') : '';
       }
       function renderTimer() {
+        TableData.expireSeats(state);
+        const seated = TableData.seatedNames(state,players);
         const seconds = Math.max(0, state.remaining);
         $('time').textContent = String(Math.floor(seconds / 60)).padStart(2,'0') + ':' + String(seconds % 60).padStart(2,'0');
         $('homeTimer').textContent = $('time').textContent;
-        const canControl = user && user.role === 'admin';
+        const canControl = isAdmin();
         $('toggle').textContent = !state.started ? 'スタート' : (canControl ? (state.paused ? 'タイマーを再開' : '一時停止') : 'タイマー稼働中');
         $('toggle').disabled = state.started && !canControl;
         $('gameStatus').textContent = !state.started ? '開始前' : (state.paused ? '一時停止中' : '進行中');
         $('gameStatus').style.color = state.paused ? 'var(--dim)' : 'var(--green)';
-        const dealer = players.length ? state.dealerIndex % players.length : 0;
-        $('dealerName').textContent = players[dealer] || '—';
-        $('nextDealer').textContent = players.length ? players[(dealer + 1) % players.length] : '—';
-        $('playerCount').textContent = players.length + ' 名';
-        $('homePlayerCount').textContent = players.length;
+        const dealer = seated.length ? state.dealerIndex % seated.length : 0;
+        $('dealerName').textContent = seated[dealer] || '—';
+        $('nextDealer').textContent = seated.length ? seated[(dealer + 1) % seated.length] : '—';
+        $('playerCount').textContent = seated.length + ' 名';
+        $('homePlayerCount').textContent = seated.length;
         const checkedIn = Boolean(user && state.checkins[user.name]);
-        $('checkInStatus').textContent = checkedIn ? '参加確認済み · タップでキャンセル' : '参加する場合はタップして席を確保';
+        $('checkInStatus').textContent = checkedIn ? '着席中 · 翌日0時に自動退席' : '今日の参加キーを入力して参加';
         $('checkIn').classList.toggle('checked-in',checkedIn);
-        $('nextDealerButton').disabled = !players.length;
-        $('addRebuy').disabled = !players.length;
-        $('playerList').innerHTML = players.map(function (p, i) {
+        $('nextDealerButton').disabled = !seated.length;
+        $('addRebuy').disabled = !seated.length;
+        $('playerList').innerHTML = seated.map(function (p, i) {
           const profile = profileFor(p);
-          const avatar = profile.photo ? '<img src="' + profile.photo + '" alt="">' : '♠';
+          const avatar = profile.photo ? '<img src="' + escapeHtml(profile.photo) + '" alt="">' : '♠';
           const busts = state.busts[p] || 0;
-          return '<div class="player"><span style="display:flex;align-items:center"><i class="profile-mini">' + avatar + '</i><span>' + (i === dealer ? '🎴 ' : '') + escapeHtml(profile.displayName || p) + (i === dealer ? ' · ディーラー' : '') + (state.checkins[p] ? ' · 参加確認済み' : '') + '<small class="style-tag">' + escapeHtml(profile.style || 'エンジョイ勢') + ' · ' + busts + '回飛び</small></span></span><span>' + money(state.entries[p] || 0) + '</span></div>';
-        }).join('') || '<p class="history">まだ参加者がいません。ホームで参加チェックインしてください。</p>';
+          return '<div class="player"><span style="display:flex;align-items:center"><i class="profile-mini">' + avatar + '</i><span>' + (i === dealer ? '🎴 ' : '') + escapeHtml(profile.displayName || p) + (i === dealer ? ' · ディーラー' : '') + (state.checkins[p] ? ' · 参加確認済み' : '') + '<small class="style-tag">' + escapeHtml(profile.style || 'エンジョイ勢') + ' · ' + busts + '回飛び</small></span></span><span>' + formatPD(state.entries[p] || 0) + '</span></div>';
+        }).join('') || '<p class="history">まだ着席者がいません。管理者の参加キーを入力して席に座ってください。</p>';
         document.querySelectorAll('[data-setting="sb"]').forEach(function (el) { el.textContent = Number(state.sb).toLocaleString(); });
         document.querySelectorAll('[data-setting="bb"]').forEach(function (el) { el.textContent = Number(state.bb).toLocaleString(); });
         renderRanking();
-        save();
+        if (!shared) save();
       }
       function renderRanking() {
         const rows = TableData.rankingRows(state,players,accounts);
@@ -202,14 +253,14 @@
         $('rankingMyAvatar').innerHTML = avatar.replace('rank-avatar','rank-avatar-inner');
         $('homeRankName').textContent = displayName;
         $('rankingMyName').textContent = displayName;
-        $('rankingMyName').parentElement.querySelector('small').textContent = '累計収支の順位';
+        $('rankingMyName').parentElement.querySelector('small').textContent = '累計PD増減の順位';
         $('homeRankValue').textContent = currentIndex >= 0 ? '#' + (currentIndex+1) : '—';
         $('rankingMyValue').textContent = playerRow >= 0 ? '#' + rows[playerRow].position : '—';
-        $('homeRankProfit').textContent = currentIndex >= 0 ? (currentRows[currentIndex].profit > 0 ? '+' : '') + money(currentRows[currentIndex].profit) : '結果未登録';
-        $('rankingMyProfit').textContent = (ownStats.profit > 0 ? '+' : '') + money(ownStats.profit);
+        $('homeRankProfit').textContent = currentIndex >= 0 ? (currentRows[currentIndex].profit > 0 ? '+' : '') + formatPD(currentRows[currentIndex].profit) : '結果未登録';
+        $('rankingMyProfit').textContent = (ownStats.profit > 0 ? '+' : '') + formatPD(ownStats.profit);
         $('ranking').innerHTML = rows.map(function (r,i) {
           const isMe = r.name === player;
-          return '<tr' + (isMe ? ' class="my-row"' : '') + '><td class="rank">' + r.position + '</td><td class="rank-name-cell">' + avatarMarkup(r.name, 'table-rank-avatar') + '<span class="rank-person">' + escapeHtml(profileFor(r.name).displayName || r.name) + '</span></td><td>' + r.games + '</td><td>' + r.winRate + '%</td><td class="' + (r.profit >= 0 ? 'positive' : 'negative') + '">' + (r.profit > 0 ? '+' : '') + money(r.profit) + '</td></tr>';
+          return '<tr' + (isMe ? ' class="my-row"' : '') + '><td class="rank">' + r.position + '</td><td class="rank-name-cell">' + avatarMarkup(r.name, 'table-rank-avatar') + '<span class="rank-person">' + escapeHtml(profileFor(r.name).displayName || r.name) + '</span></td><td>' + r.games + '</td><td>' + r.winRate + '%</td><td class="' + (r.profit >= 0 ? 'positive' : 'negative') + '">' + (r.profit > 0 ? '+' : '') + formatPD(r.profit) + '</td></tr>';
         }).join('') || '<tr><td colspan="5" class="history">アカウントを作成すると、ここに表示されます。</td></tr>';
         $('gameHistory').innerHTML = state.history.length ? state.history.slice().reverse().map(function (game) {
           return '<p>' + escapeHtml(new Date(game.playedAt).toLocaleDateString('ja-JP')) + '　' + escapeHtml(game.title) + '</p>';
@@ -217,22 +268,22 @@
       }
       function renderResults() {
         $('saveResults').disabled = !players.length;
-        if (!players.length) { $('resultsForm').innerHTML='<p class="history">参加者を追加すると、精算を入力できます。</p>'; return; }
-        $('resultsForm').innerHTML = '<div class="result-row"><b>プレイヤー</b><b>開始持ち点</b><b>飛び回数</b><b>終了持ち点</b><b>精算額</b></div>' + players.map(function (p) {
+        if (!players.length) { $('resultsForm').innerHTML='<p class="history">参加者を追加すると、結果を入力できます。</p>'; return; }
+        $('resultsForm').innerHTML = '<div class="result-row"><b>プレイヤー</b><b>開始持ち点</b><b>飛び回数</b><b>終了持ち点</b><b>回収PD</b></div>' + players.map(function (p) {
           const r = state.results[p] || {};
           const busts = state.busts[p] ?? r.busts ?? 0;
-          return '<div class="result-row"><input value="' + p + '" disabled><input data-player="' + p + '" data-key="startStack" type="number" min="1" value="' + (r.startStack || state.startStack) + '"><input data-player="' + p + '" data-key="busts" type="number" min="0" value="' + busts + '"><input data-player="' + p + '" data-key="chips" type="number" min="0" value="' + (r.chips || 0) + '"><input data-player="' + p + '" data-key="payout" type="number" min="0" value="' + (r.payout || 0) + '"></div>';
+          return '<div class="result-row"><input value="' + escapeHtml(p) + '" disabled><input data-player="' + escapeHtml(p) + '" data-key="startStack" type="number" min="1" value="' + (r.startStack || state.startStack) + '"><input data-player="' + escapeHtml(p) + '" data-key="busts" type="number" min="0" value="' + busts + '"><input data-player="' + escapeHtml(p) + '" data-key="chips" type="number" min="0" value="' + (r.chips || 0) + '"><input data-player="' + escapeHtml(p) + '" data-key="payout" type="number" min="0" value="' + (r.payout || 0) + '"></div>';
         }).join('');
       }
       function renderAdmin() {
         if (!isAdmin()) return;
         const names = Array.from(new Set(Object.keys(accounts).concat(players)));
-        $('adminPlayers').innerHTML = '<p class="history">登録者全員を管理できます。編集から金額・持ち点・成績の変更や削除ができます。</p>' + names.map(function (p) { return '<div class="player" style="align-items:center;gap:10px"><span style="display:flex;align-items:center">' + avatarMarkup(p,'profile-mini') + '<span>' + escapeHtml(profileFor(p).displayName || p) + '<small class="style-tag">' + (players.includes(p) ? '今回参加中' : '未参加') + ' · 累計 ' + money(TableData.statsFor(p,state).profit) + '</small></span></span><button class="secondary" type="button" data-edit-player="' + escapeHtml(p) + '" style="height:36px;padding:0 12px">編集</button></div>'; }).join('');
+$('adminPlayers').innerHTML = '<p class="history">登録者全員を管理できます。編集からPD・持ち点・成績の変更や削除ができます。</p>' + names.map(function (p) { return '<div class="player" style="align-items:center;gap:10px"><span style="display:flex;align-items:center">' + avatarMarkup(p,'profile-mini') + '<span>' + escapeHtml(profileFor(p).displayName || p) + '<small class="style-tag">' + (TableData.seatedNames(state,players).includes(p) ? '着席中' : '離席中') + ' · ' + (accounts[p] && accounts[p].role === 'admin' ? '管理者' : 'プレイヤー') + ' · 累計 ' + formatPD(TableData.statsFor(p,state).profit) + '</small></span></span><button class="secondary" type="button" data-edit-player="' + escapeHtml(p) + '" style="height:36px;padding:0 12px">編集</button></div>'; }).join('');
         document.querySelectorAll('[data-edit-player]').forEach(function (button) { button.onclick = function () { openPlayerEditor(button.dataset.editPlayer); }; });
         const reports = Object.entries(state.reports);
         $('reportList').innerHTML = reports.length ? reports.map(function (entry) {
           const name = entry[0], report = entry[1];
-          return '<div class="player"><span>' + escapeHtml(name) + ' · ' + Number(report.startStack || state.startStack || 1000).toLocaleString() + '点スタート / ' + Number(report.busts || 0) + '回飛び / ' + Number(report.chips || 0).toLocaleString() + '点残り' + (report.status === 'approved' ? ' · 確認済み' : '') + '</span><button class="secondary" data-approve="' + escapeHtml(name) + '" style="height:32px;padding:0 8px">反映</button></div>';
+          return '<div class="player"><span>' + escapeHtml(name) + ' · ' + Number(report.startStack || state.startStack || 1000).toLocaleString() + ' PDスタート / ' + Number(report.busts || 0) + '回飛び / ' + Number(report.chips || 0).toLocaleString() + ' PD残り' + (report.status === 'approved' ? ' · 確認済み' : '') + '</span><button class="secondary" data-approve="' + escapeHtml(name) + '" style="height:32px;padding:0 8px">反映</button></div>';
         }).join('') : '<p style="color:var(--dim);font-size:13px">まだ申告はありません。</p>';
         document.querySelectorAll('[data-approve]').forEach(function (button) {
           button.onclick = function () {
@@ -244,7 +295,7 @@
             state.results[name].busts = state.reports[name].busts;
             state.busts[name] = state.reports[name].busts;
             state.reports[name].status = 'approved';
-            save(); renderAdmin();
+            persistThen(function(){renderAdmin();});
           };
         });
         $('dealerMinutes').value = state.dealerMinutes;
@@ -261,7 +312,9 @@
         $('editPlayerId').textContent = 'ID: ' + name + (accounts[name] ? '' : '（ゲスト）');
         $('editDisplayName').value = p.displayName || name;
         $('editStyle').value = p.style || 'エンジョイ勢';
-        $('editParticipating').checked = players.includes(name);
+        $('editParticipating').checked = TableData.seatedNames(state,players).includes(name);
+        $('editRole').value = accounts[name] ? accounts[name].role : 'player';
+        $('editRole').disabled = !accounts[name] || name === user.name;
         $('editEntry').value = state.entries[name] || 0;
         $('editStartStack').value = r.startStack || state.startStack;
         $('editBusts').value = state.busts[name] ?? r.busts ?? 0;
@@ -273,12 +326,12 @@
         $('editHistory').innerHTML = state.history.map(function (game,index) {
           if (game.id === state.currentGameId || !Object.prototype.hasOwnProperty.call(game.results || {},name)) return '';
           const result = game.results[name];
-          return '<section style="border-top:1px solid var(--line);padding-top:12px"><b>' + escapeHtml(new Date(game.playedAt).toLocaleDateString('ja-JP') + ' · ' + game.title) + '</b>' + [['entry','投入金額（円）',Number((game.entries || {})[name]) || 0],['payout','精算額（円）',result.payout || 0],['chips','終了持ち点',result.chips || 0],['busts','飛び回数',result.busts || 0]].map(function (field) { return '<div class="field"><label for="history-' + index + '-' + field[0] + '">' + field[1] + '</label><input id="history-' + index + '-' + field[0] + '" data-edit-history="' + index + '" data-key="' + field[0] + '" type="number" min="0" step="1" required value="' + field[2] + '"></div>'; }).join('') + '</section>';
+          return '<section style="border-top:1px solid var(--line);padding-top:12px"><b>' + escapeHtml(new Date(game.playedAt).toLocaleDateString('ja-JP') + ' · ' + game.title) + '</b>' + [['entry','投入PD',Number((game.entries || {})[name]) || 0],['payout','回収PD',result.payout || 0],['chips','終了持ち点',result.chips || 0],['busts','飛び回数',result.busts || 0]].map(function (field) { return '<div class="field"><label for="history-' + index + '-' + field[0] + '">' + field[1] + '</label><input id="history-' + index + '-' + field[0] + '" data-edit-history="' + index + '" data-key="' + field[0] + '" type="number" min="0" step="1" required value="' + field[2] + '"></div>'; }).join('') + '</section>';
         }).join('') || '<p class="history">過去の記録はありません。今回の保存済み結果は上の項目から修正できます。</p>';
         updateEditProfit();
         $('playerEditor').showModal();
       }
-      function updateEditProfit() { $('editProfitPreview').textContent = '今回の収支：' + money(Number($('editPayout').value) - Number($('editEntry').value)) + '（精算額 − 投入金額）'; }
+      function updateEditProfit() { $('editProfitPreview').textContent = '今回のPD増減：' + formatPD(Number($('editPayout').value) - Number($('editEntry').value)) + '（回収PD − 投入PD）'; }
       $('editEntry').oninput = updateEditProfit;
       $('editPayout').oninput = updateEditProfit;
       $('cancelPlayerEdit').onclick = function () { $('playerEditor').close(); };
@@ -294,12 +347,17 @@
           history[index] = history[index] || {index:index}; history[index][input.dataset.key] = Number(input.value);
         });
         try {
+          const nextAccounts = JSON.parse(JSON.stringify(accounts));
+          if (accounts[editingPlayer]) {
+            const role = $('editRole').value;
+            if (role !== accounts[editingPlayer].role && !confirm('この人の権限を「' + (role === 'admin' ? '管理者' : '一般プレイヤー') + '」に変更しますか？')) return;
+            TableData.setRole(nextAccounts,user.name,editingPlayer,role);
+          }
           backupPlayerManagement();
           players = TableData.editPlayer(state,players,editingPlayer,{displayName:$('editDisplayName').value.trim(),style:$('editStyle').value,participating:$('editParticipating').checked,entry:Number($('editEntry').value),startStack:Number($('editStartStack').value),busts:Number($('editBusts').value),chips:Number($('editChips').value),payout:Number($('editPayout').value),history:Object.values(history)});
-          save(); renderAdmin(); renderTimer();
-          $('userName').textContent = profileFor(user.name).displayName || user.name;
-          $('playerEditor').close();
-          alert('プレイヤー情報を保存しました。');
+          if (!shared) localStorage.setItem('table-accounts',JSON.stringify(nextAccounts));
+          Object.assign(accounts,nextAccounts);
+          persistThen(function(){renderAdmin(); renderTimer(); $('userName').textContent=profileFor(user.name).displayName || user.name; $('playerEditor').close(); alert('プレイヤー情報を保存しました。');});
         } catch (error) { $('editError').textContent = error.message; }
       };
       $('deletePlayerAccount').onclick = function () {
@@ -309,14 +367,14 @@
         try {
           backupPlayerManagement();
           players = TableData.deletePlayer(state,players,accounts,name,user.name);
-          localStorage.setItem('table-accounts',JSON.stringify(accounts));
-          save(); renderAdmin(); renderTimer(); $('playerEditor').close(); editingPlayer=null;
-          alert('プレイヤーを削除しました。削除前のデータはこの端末にバックアップしています。');
+          if (!shared) localStorage.setItem('table-accounts',JSON.stringify(accounts));
+          persistThen(function(){renderAdmin();renderTimer();$('playerEditor').close();editingPlayer=null;alert('プレイヤーを削除しました。削除前のデータはこの端末にバックアップしています。');});
         } catch (error) { $('editError').textContent = error.message; }
       };
       function boot() {
         if (!user) return;
-        user.role = user.role || 'player';
+        user.role = accounts[user.name].role;
+        if (!shared) localStorage.setItem('table-user',JSON.stringify(user));
         $('authGate').classList.add('hidden'); $('authForm').classList.add('hidden'); $('app').classList.remove('hidden');
         const profile = state.profiles[user.name] || {};
         $('userName').textContent = profile.displayName || user.name;
@@ -328,6 +386,7 @@
       }
       function showAuthForm(mode) {
         authMode = mode;
+        $('setupCodeField').classList.toggle('hidden',!(shared && sharedSession.setupRequired && mode === 'register'));
         $('authGate').classList.add('hidden');
         $('authForm').classList.remove('hidden');
         $('authTitle').textContent = mode === 'register' ? 'アカウント作成' : 'ログイン';
@@ -337,18 +396,32 @@
         $('authMessage').textContent = '';
       }
       function afterNextPaint(callback) {
-        window.requestAnimationFrame(function () { window.requestAnimationFrame(callback); });
+        let called = false, timer;
+        function finish() { if (called) return; called=true; window.clearTimeout(timer); callback(); }
+        timer = window.setTimeout(finish,80);
+        if (window.requestAnimationFrame) window.requestAnimationFrame(function () { window.requestAnimationFrame(finish); });
       }
       function transitionWithLoader(callback) {
         $('loadingScreen').classList.remove('hidden');
-        afterNextPaint(function () { try { callback(); } finally { $('loadingScreen').classList.add('hidden'); } });
+        afterNextPaint(function () {
+          try { callback(); }
+          catch (error) { window.TableStartup.fail('画面を表示できませんでした。保存データはそのままです。もう一度読み込んでください。'); }
+          finally { $('loadingScreen').classList.add('hidden'); window.TableStartup.done(); }
+        });
       }
       function bytesToHex(bytes) { return Array.from(new Uint8Array(bytes)).map(function (b) { return b.toString(16).padStart(2,'0'); }).join(''); }
       async function passwordHash(password, saltHex) {
         if (!window.crypto || !window.crypto.subtle) throw new Error('SECURE_CONTEXT_REQUIRED');
-        const salt = new Uint8Array(saltHex.match(/.{2}/g).map(function (byte) { return parseInt(byte,16); }));
-        const key = await window.crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
-        return bytesToHex(await window.crypto.subtle.deriveBits({name:'PBKDF2',salt:salt,iterations:150000,hash:'SHA-256'},key,256));
+        if (typeof saltHex !== 'string' || !/^[a-f0-9]{32}$/i.test(saltHex)) throw new Error('INVALID_ACCOUNT');
+        let timeout;
+        const hash = (async function () {
+          const salt = new Uint8Array(saltHex.match(/.{2}/g).map(function (byte) { return parseInt(byte,16); }));
+          const key = await window.crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
+          return bytesToHex(await window.crypto.subtle.deriveBits({name:'PBKDF2',salt:salt,iterations:150000,hash:'SHA-256'},key,256));
+        }());
+        try {
+          return await Promise.race([hash,new Promise(function (_,reject) { timeout=window.setTimeout(function () { reject(new Error('AUTH_TIMEOUT')); },12000); })]);
+        } finally { window.clearTimeout(timeout); }
       }
       async function submitAuth() {
         if (authBusy) return;
@@ -362,15 +435,22 @@
         authBusy = true;
         $('submitAuth').disabled = true;
         $('loadingScreen').classList.remove('hidden');
+        let openingApp = false;
         try {
+          if (shared) {
+            const data=await window.TableAPI.request(authMode === 'register' ? '/api/register' : '/api/login','POST',{id:id,password:password,setupCode:$('setupCode').value});
+            applyShared(data); sharedSession.setupRequired=false; $('accountPassword').value=''; openingApp=true; boot(); return;
+          }
           await new Promise(function (resolve) { afterNextPaint(resolve); });
           if (!window.crypto || !window.crypto.subtle) throw new Error('SECURE_CONTEXT_REQUIRED');
           if (authMode === 'register') {
             const salt = new Uint8Array(16); window.crypto.getRandomValues(salt);
             const saltHex = bytesToHex(salt);
             const role = Object.keys(accounts).length === 0 ? 'admin' : 'player';
-            accounts[id] = {salt:saltHex,hash:await passwordHash(password,saltHex),role:role,createdAt:new Date().toISOString()};
-            localStorage.setItem('table-accounts',JSON.stringify(accounts));
+            const account = {salt:saltHex,hash:await passwordHash(password,saltHex),role:role,createdAt:new Date().toISOString()};
+            const nextAccounts = Object.assign({},accounts); nextAccounts[id]=account;
+            localStorage.setItem('table-accounts',JSON.stringify(nextAccounts));
+            accounts[id] = account;
             message.textContent = role === 'admin' ? '作成完了。最初のアカウントは管理者になります。' : 'アカウントを作成しました。';
           } else {
             const account = accounts[id];
@@ -379,9 +459,11 @@
           user = {name:id,role:accounts[id].role};
           localStorage.setItem('table-user',JSON.stringify(user));
           $('accountPassword').value = '';
+          openingApp = true;
           boot();
         } catch (error) {
-          message.textContent = error.message === 'SECURE_CONTEXT_REQUIRED' ? '安全な接続で開いてください（HTTPS または localhost）。' : '処理に失敗しました。もう一度お試しください。';
+          if (openingApp) window.TableStartup.fail('ログイン後の画面を表示できませんでした。登録情報は保存されています。もう一度読み込んでください。');
+          message.textContent = shared ? error.message : error.message === 'SECURE_CONTEXT_REQUIRED' ? '安全な接続で開いてください（HTTPS または localhost）。' : error.message === 'AUTH_TIMEOUT' ? '認証に時間がかかっています。もう一度お試しください。' : error.message === 'INVALID_ACCOUNT' ? 'アカウント情報を読み込めませんでした。管理者に確認してください。' : '処理に失敗しました。もう一度お試しください。';
         } finally {
           $('loadingScreen').classList.add('hidden');
           $('submitAuth').disabled = false;
@@ -393,31 +475,32 @@
       $('backAuth').onclick = function () { $('authForm').classList.add('hidden'); $('authGate').classList.remove('hidden'); $('accountPassword').value=''; };
       $('submitAuth').onclick = submitAuth;
       $('accountPassword').onkeydown = function (event) { if (event.key === 'Enter') submitAuth(); };
-      $('logout').onclick = function () { localStorage.removeItem('table-user'); user = null; $('app').classList.add('hidden'); transitionWithLoader(function () { $('authGate').classList.remove('hidden'); $('authForm').classList.add('hidden'); }); };
+      $('logout').onclick = async function () { if(shared){try{await window.TableAPI.request('/api/logout','POST',{});}catch(error){alert(error.message);return;}}else localStorage.removeItem('table-user'); user=null;$('app').classList.add('hidden');transitionWithLoader(function(){$('authGate').classList.remove('hidden');$('authForm').classList.add('hidden');}); };
       document.querySelectorAll('[data-page]').forEach(function (b) { b.onclick = function () { show(b.dataset.page); }; });
       document.querySelectorAll('[data-open]').forEach(function (b) { b.onclick = function () { show(b.dataset.open); }; });
       $('toggle').onclick = function () {
         if (!state.started) { state.started = true; state.paused = false; }
         else if (!user || user.role !== 'admin') return;
         else state.paused = !state.paused;
-        renderTimer();
+        persistThen(function(){renderTimer();},{timerAction:true});
       };
-      $('reset').onclick = function () { if (!isAdmin()) return; state.remaining = state.dealerMinutes * 60; state.started = false; state.paused = true; renderTimer(); };
-      $('nextDealerButton').onclick = function () { if (!isAdmin() || !players.length) return; state.dealerIndex = (state.dealerIndex + 1) % players.length; state.remaining = state.dealerMinutes * 60; state.started = true; state.paused = false; renderTimer(); };
+      $('reset').onclick = function () { if (!isAdmin()) return; state.remaining=state.dealerMinutes*60;state.started=false;state.paused=true;persistThen(function(){renderTimer();},{timerAction:true}); };
+      $('nextDealerButton').onclick = function () { const seated=TableData.seatedNames(state,players);if(!isAdmin() || !seated.length)return;state.dealerIndex=(state.dealerIndex+1)%seated.length;state.remaining=state.dealerMinutes*60;state.started=true;state.paused=false;persistThen(function(){renderTimer();},{timerAction:true}); };
       $('addRebuy').onclick = function () { if (!isAdmin()) return; $('rebuyPlayer').innerHTML = players.map(function (p) { return '<option>' + escapeHtml(p) + '</option>'; }).join(''); $('rebuyModal').showModal(); };
-      $('saveRebuy').onclick = function () { if (!isAdmin()) return; const p = $('rebuyPlayer').value, v = Number($('rebuyValue').value); if (players.includes(p) && Number.isSafeInteger(v) && v > 0) { state.entries[p] = (state.entries[p] || 0) + v; state.prize += v; renderTimer(); } };
+      $('saveRebuy').onclick = function () { if(!isAdmin())return;const p=$('rebuyPlayer').value,v=Number($('rebuyValue').value);if(players.includes(p) && Number.isSafeInteger(v) && v>0){state.entries[p]=(state.entries[p] || 0)+v;state.prize+=v;persistThen(function(){renderTimer();});} };
       $('saveResults').onclick = function () {
         if (!isAdmin() || !players.length) return;
         document.querySelectorAll('[data-player]').forEach(function (i) { const p=i.dataset.player,k=i.dataset.key; state.results[p]=state.results[p]||{}; state.results[p][k]=Number(i.value); if (k === 'busts') state.busts[p]=Number(i.value); });
         TableData.recordGame(state,players);
-        save(); renderRanking(); alert('精算結果を保存しました。');
+        persistThen(function(){renderRanking();alert('結果を保存しました。');});
       };
       document.querySelectorAll('.style-choice').forEach(function (b) { b.onclick = function () { selectedStyle=b.dataset.style; document.querySelectorAll('.style-choice').forEach(function(x){x.classList.toggle('selected',x===b);}); }; });
       $('saveProfile').onclick = function () {
         const displayName = $('profileName').value.trim() || user.name;
         state.profiles[user.name] = {style:selectedStyle,displayName:displayName,photo:selectedPhoto};
         $('userName').textContent = displayName;
-        localStorage.setItem('table-user', JSON.stringify(user)); save(); renderProfile(); renderTimer(); alert('プロフィールを保存しました。');
+        if (!shared) localStorage.setItem('table-user',JSON.stringify(user));
+        persistThen(function(){renderProfile();renderTimer();alert('プロフィールを保存しました。');});
       };
       $('profilePhoto').onchange = function (event) {
         const file = event.target.files && event.target.files[0];
@@ -432,7 +515,7 @@
             canvas.width = 512; canvas.height = 512;
             canvas.getContext('2d').drawImage(image, x, y, side, side, 0, 0, 512, 512);
             selectedPhoto = canvas.toDataURL('image/jpeg', 0.82);
-            $('avatarPreview').innerHTML = '<img alt="プロフィール写真" src="' + selectedPhoto + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+            $('avatarPreview').innerHTML = '<img alt="プロフィール写真" src="' + escapeHtml(selectedPhoto) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
           };
           image.src = String(reader.result);
         };
@@ -443,25 +526,62 @@
         $('profilePhoto').value = '';
         $('avatarPreview').textContent = '♠';
       };
-      $('checkIn').onclick = function () {
-        if (!players.includes(user.name)) { players.push(user.name); state.entries[user.name]=0; }
-        state.checkins[user.name] = !state.checkins[user.name];
-        save(); renderTimer();
+      function openSeatJoin(link) {
+        if (!user) return;
+        $('seatJoinLink').value = link || '';
+        $('seatJoinMessage').textContent = state.checkins[user.name] ? 'すでに着席しています。翌日0時に自動で退席します。' : '';
+        $('seatJoinModal').showModal();
+      }
+      $('checkIn').onclick = function () { openSeatJoin(''); };
+      $('cancelSeatJoin').onclick = function () { $('seatJoinModal').close(); };
+      $('seatJoinForm').onsubmit = function (event) {
+        event.preventDefault();
+        if (!user) return;
+        const token=$('seatJoinLink').value.trim().toUpperCase().replace(/[\s-]/g,'');
+        if (!/^[A-HJ-NP-Z2-9]{8}$/.test(token)) { $('seatJoinMessage').textContent='管理者から教えてもらった8文字の参加キーを入力してください。'; return; }
+        try {
+          if (!shared) { TableData.expireSeats(state);players=TableData.joinSeat(state,players,accounts,user.name,token); }
+          persistThen(function(){renderTimer();$('seatJoinModal').close();alert('席に座りました。翌日0時に自動で退席します。');},{seatToken:token});
+        } catch (error) { $('seatJoinMessage').textContent=error.message; }
       };
+      function displaySeatQr(renew) {
+        if (!isAdmin()) return;
+        $('seatQrModal').showModal();
+        $('seatQrError').textContent='';$('seatQrImage').textContent='';
+        if (shared) {
+          $('seatQrImage').textContent='生成中…';
+          window.TableAPI.request('/api/seat-code','POST',{renew:Boolean(renew)}).then(function(data){applyShared(data);showSeatCode();}).catch(function(error){$('seatQrImage').textContent='';$('seatQrError').textContent=error.message;});
+          return;
+        }
+        try {
+          TableData.expireSeats(state);
+          if (renew || !state.seatInvite || !accounts[state.seatInvite.createdBy] || accounts[state.seatInvite.createdBy].role !== 'admin') {
+            if (!window.crypto || !window.crypto.getRandomValues) throw new Error('安全な接続で開いてください。');
+            const bytes=new Uint8Array(8);window.crypto.getRandomValues(bytes);
+            const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            TableData.createSeatInvite(state,accounts,user.name,Array.from(bytes).map(function(byte){return alphabet[byte%32];}).join(''));save();
+          }
+          showSeatCode();
+        } catch (error) { $('seatQrError').textContent=error.message; }
+      }
+      function showSeatCode() { $('seatQrImage').textContent=state.seatInvite.token.slice(0,4)+' '+state.seatInvite.token.slice(4);$('seatQrDay').textContent=state.seatInvite.day+' の参加キー · 翌日0時まで有効（日本時間）'; }
+      $('displaySeatQr').onclick = function () { displaySeatQr(false); };
+      $('renewSeatQr').onclick = function () { if(isAdmin() && confirm('参加キーを再発行しますか？以前のキーは使えなくなります。')) displaySeatQr(true); };
+      $('closeSeatQr').onclick = function () { $('seatQrModal').close(); };
       $('recordBust').onclick = function () {
-        if (!players.includes(user.name)) { alert('先にホームで参加チェックインしてください。'); return; }
+        if (!TableData.seatedNames(state,players).includes(user.name)) { alert('先に管理者の参加キーで席に座ってください。'); return; }
         state.busts[user.name] = (state.busts[user.name] || 0) + 1;
-        save(); renderProfile(); renderTimer();
+        persistThen(function(){renderProfile();renderTimer();});
       };
       function updateCashoutSummary() {
         const starting = Number(state.startStack) || 1000;
         const busts = Math.max(0,Number($('reportBusts').value) || 0);
         const chips = Math.max(0,Number($('cashoutChips').value) || 0);
         const total = starting * (busts + 1);
-        $('cashoutSummary').textContent = starting.toLocaleString() + '点スタート / ' + busts + '回飛び（合計' + total.toLocaleString() + '点投入） / ' + chips.toLocaleString() + '点残り';
+        $('cashoutSummary').textContent = starting.toLocaleString() + ' PDスタート / ' + busts + '回飛び（合計' + total.toLocaleString() + ' PD投入） / ' + chips.toLocaleString() + ' PD残り';
       }
       $('reportCashout').onclick = function () {
-        if (!players.includes(user.name)) { alert('先にホームで参加チェックインしてください。'); return; }
+        if (!TableData.seatedNames(state,players).includes(user.name)) { alert('先に管理者の参加キーで席に座ってください。'); return; }
         const previous = state.reports[user.name];
         $('reportBusts').value = previous ? previous.busts : (state.busts[user.name] || 0);
         $('cashoutChips').value = previous ? previous.chips : '';
@@ -471,12 +591,13 @@
       $('reportBusts').oninput = updateCashoutSummary;
       $('cashoutChips').oninput = updateCashoutSummary;
       $('sendCashout').onclick = function () {
+        if (!user || !TableData.seatedNames(state,players).includes(user.name)) return;
         const chips = Number($('cashoutChips').value);
         const busts = Math.max(0,Number($('reportBusts').value) || 0);
         if (Number.isFinite(chips) && chips >= 0) {
           state.busts[user.name] = busts;
           state.reports[user.name] = {startStack:Number(state.startStack)||1000,busts:busts,chips:chips,status:'pending',submittedAt:new Date().toISOString()};
-          save(); renderProfile(); renderTimer();
+          persistThen(function(){renderProfile();renderTimer();});
         }
       };
       $('saveSettings').onclick = function () {
@@ -488,18 +609,42 @@
           return {color:$('chipRows').querySelector('[data-chip="color"][data-index="'+i+'"]').value, value:Number($('chipRows').querySelector('[data-chip="value"][data-index="'+i+'"]').value)||0, count:Number($('chipRows').querySelector('[data-chip="count"][data-index="'+i+'"]').value)||0};
         });
         state.startStack = Number($('startStack').value)||1000;
-        save(); renderTimer(); alert('ゲーム設定を保存しました。');
+        persistThen(function(){renderTimer();alert('ゲーム設定を保存しました。');},{timerAction:true});
       };
       $('addPlayer').onclick = function () {
         if (!isAdmin()) return;
         const name = prompt('追加するプレイヤー名');
-        if (name && !players.includes(name.trim())) { const p=name.trim(); players.push(p); state.entries[p]=0; save(); renderAdmin(); renderTimer(); }
+        if (name && !players.includes(name.trim())) { const p=name.trim();players.push(p);state.entries[p]=0;persistThen(function(){renderAdmin();renderTimer();}); }
       };
-      setInterval(function () { if (state.started && !state.paused && state.remaining > 0) { state.remaining--; renderTimer(); if (state.remaining === 0) { try { const a=new AudioContext(),o=a.createOscillator();o.frequency.value=880;o.connect(a.destination);o.start();o.stop(a.currentTime+.35); } catch(e) {} } } }, 1000);
+      setInterval(function () {
+        if (TableData.expireSeats(state)) { renderTimer(); if (user) renderProfile(); }
+        if (state.started && !state.paused && state.remaining > 0) { state.remaining=shared && state.timerEndsAt ? Math.max(0,Math.ceil(state.timerEndsAt-Date.now()/1000)) : state.remaining-1;renderTimer();if(state.remaining===0){try{const a=new AudioContext(),o=a.createOscillator();o.frequency.value=880;o.connect(a.destination);o.start();o.stop(a.currentTime+.35);}catch(e){}} }
+      }, 1000);
+      let polling=false;
+      if (shared) setInterval(async function () {
+        if (!user || polling || window.TableAPI.isBusy() || document.querySelector('dialog[open]') || document.activeElement && /INPUT|SELECT/.test(document.activeElement.tagName)) return;
+        polling=true;
+        const revision=window.TableAPI.revision();
+        try {
+          const data=await window.TableAPI.request('/api/session');
+          if(!data.user){user=null;$('app').classList.add('hidden');$('authGate').classList.remove('hidden');return;}
+          if(data.revision!==revision){applyShared(data);renderTimer();if(!$('adminPage').classList.contains('hidden') && isAdmin())renderAdmin();if(!$('myPage').classList.contains('hidden'))renderProfile();if(!isAdmin() && (!$('adminPage').classList.contains('hidden') || !$('resultsPage').classList.contains('hidden')))show('home');}
+        } catch (_) {} finally { polling=false; }
+      },10000);
+      if (window.addEventListener) {
+        window.addEventListener('focus',function () { if (TableData.expireSeats(state)) renderTimer(); });
+        // A role changed in another tab must not leave old admin controls active.
+        window.addEventListener('storage',function (event) {
+          if (event.key === 'table-accounts') window.location.reload();
+        });
+      }
       transitionWithLoader(function () {
-        if (user && accounts[user.name] && accounts[user.name].role === user.role) boot();
-        else { user=null; localStorage.removeItem('table-user'); $('authGate').classList.remove('hidden'); }
+        if (user && accounts[user.name]) boot();
+        else { user=null;if(!shared)localStorage.removeItem('table-user');$('authGate').classList.remove('hidden'); }
       });
+      } catch (error) {
+        window.TableStartup.fail(window.TABLE_SHARED ? '共有データに接続できません。' + error.message : '保存データまたは必要なファイルを読み込めませんでした。データは削除していません。もう一度読み込んでください。');
+      }
     }());
   </script>
 </body>

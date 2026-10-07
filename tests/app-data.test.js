@@ -74,13 +74,43 @@ function run(argv) {
   assert(!managedAccounts.bob && !roster.includes('bob') && !managed.profiles.bob && !managed.reports.bob && managed.history.every(function(g){return !g.results.bob && !g.entries.bob;}),'deletion must remove account, roster, profile, reports and historical records');
   assert(managed.prize === 1000,'deletion must recalculate game totals');
 
+  const seats=TableData.initialize({},[],{}).state, seatAccounts={alice:{role:'admin'},bob:{role:'player'}};
+  const today='2026-10-06T14:59:00Z', tomorrow='2026-10-06T15:00:00Z', token='ABCD2345';
+  assert(TableData.japanDay(today) === '2026-10-06' && TableData.japanDay(tomorrow) === '2026-10-07','attendance must use midnight in Japan, not host timezone');
+  try { TableData.createSeatInvite(seats,seatAccounts,'bob',token,today); } catch(e) {}
+  assert(!seats.seatInvite,'non-admin cannot generate QR invitations');
+  TableData.createSeatInvite(seats,seatAccounts,'alice',token,today);
+  let sitting=TableData.joinSeat(seats,[],seatAccounts,'bob',token,today);
+  assert(TableData.seatedNames(seats,sitting,today).join(',') === 'bob','valid QR must seat signed-in player');
+  sitting=TableData.joinSeat(seats,sitting,seatAccounts,'bob',token,today);
+  assert(sitting.length === 1,'scanning QR twice must not duplicate a player');
+  try { TableData.joinSeat(seats,sitting,seatAccounts,'alice','b'.repeat(32),today); } catch(e) {}
+  assert(!seats.seats.alice,'forged QR must not create a seat');
+  seats.entries.bob=1000; seats.results.bob={payout:1500};TableData.recordGame(seats,sitting);
+  const preserved=JSON.stringify(seats.history);
+  assert(TableData.expireSeats(seats,tomorrow) && !seats.checkins.bob && !seats.seatInvite,'at midnight seats and QR must expire');
+  assert(!TableData.expireSeats(seats,tomorrow),'expiry must be idempotent');
+  assert(TableData.seatedNames(seats,sitting,tomorrow).length === 0 && seats.entries.bob === 1000 && JSON.stringify(seats.history) === preserved,'automatic checkout must preserve money and game history');
+  try { TableData.joinSeat(seats,sitting,seatAccounts,'bob',token,tomorrow); } catch(e) {}
+  assert(!seats.checkins.bob,'yesterday QR must not admit someone');
+  try { TableData.setRole(seatAccounts,'bob','bob','admin'); } catch(e) {}
+  assert(seatAccounts.bob.role === 'player','non-admin cannot promote themselves');
+  TableData.setRole(seatAccounts,'alice','bob','admin');
+  assert(seatAccounts.bob.role === 'admin','admin can grant admin role');
+  TableData.setRole(seatAccounts,'alice','bob','player');
+  try { TableData.setRole(seatAccounts,'alice','alice','player'); } catch(e) {}
+  assert(seatAccounts.alice.role === 'admin','admin self-demotion must be blocked');
+
   // Exercise the real page script with a minimal DOM. This catches stale element
   // references and verifies the empty → check-in → saved result flow.
   const html=read('index.html'), elements={}, homeButtons=[], mobileButtons=[];
+  assert(html.includes('ポーカードル（PD）') && html.includes('現金への換金・賞品への交換はできません。'),'currency must have a clear non-redeemable game-only description');
+  assert(!html.includes('¥') && !html.includes('（円）') && !html.includes('精算額'),'UI must not present Poker Dollars as real money');
   function element(id) {
     const el={id:id,value:'',textContent:'',innerHTML:'',className:'',style:{},disabled:false,dataset:{}};
     const classes=new Set();
     el.classList={add:function(c){classes.add(c);},remove:function(c){classes.delete(c);},toggle:function(c,on){if(on)classes.add(c);else classes.delete(c);}};
+    el.classList.contains=function(c){return classes.has(c);};
     el.focus=function(){}; el.showModal=function(){}; el.close=function(){};
     el.parentElement={querySelector:function(){return element('small');}};
     el.querySelector=function(selector){return selector === '.home-icon' && el.icon && el.icon.className === 'home-icon' ? el.icon : null;};
@@ -111,10 +141,14 @@ function run(argv) {
     }
     return [];
   }};
-  globalThis.window={requestAnimationFrame:function(fn){fn();},setTimeout:function(fn,delay){assert(!delay,'page must not impose an artificial loading delay');fn();}};
+  let scheduled=[], timerId=0;
+  globalThis.window={location:{href:'https://table.example/index.html',protocol:'https:',hash:''},crypto:{getRandomValues:function(bytes){bytes.fill(1);return bytes;}},requestAnimationFrame:function(fn){fn();},setTimeout:function(fn,delay){const id=++timerId;scheduled.push({id:id,fn:fn,delay:delay});return id;},clearTimeout:function(id){scheduled=scheduled.filter(function(timer){return timer.id !== id;});}};
   globalThis.setInterval=function(){};
   globalThis.alert=function(){};
-  new Function(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1])();
+  const scripts=Array.from(html.matchAll(/<script>\s*([\s\S]*?)<\/script>/g)).map(function(match){return match[1];});
+  function runPage() { homeButtons.forEach(function(button){button.icon.className='home-icon';}); new Function(scripts[0])(); new Function(scripts[1])(); }
+  runPage();
+  assert(elements.loadingScreen.classList.contains('hidden') && scheduled.length === 0,'successful boot must hide loader and cancel watchdog and paint fallback');
   assert(elements.homePlayerCount.textContent === 0,'page must boot without example participants');
   assert(elements.homeRankName.textContent === 'alice' && elements.homeRankValue.textContent === '—','account must not borrow another player rank');
   assert(elements.ranking.innerHTML.includes('alice') && elements.ranking.innerHTML.includes('bob') && elements.rankingMyValue.textContent === '#1','all registered accounts must be ranked before check-in');
@@ -122,7 +156,12 @@ function run(argv) {
   assert(Boolean(stored['table-before-sample-cleanup-v3']),'cleaned data must be backed up before persistence');
   homeButtons.find(function(el){return el.dataset.open === 'my';}).onclick();
   assert(elements.myGames.textContent === '0 回' && elements.myProfit.textContent.includes('0'),'registration must not create fake games or profit');
+  assert(elements.myProfit.textContent === '0 PD','zero balance must use PD');
   elements.checkIn.onclick();
+  assert(JSON.parse(stored['table-players']).length === 0,'seat button alone must not bypass QR');
+  elements.displaySeatQr.onclick();
+  assert(/^[A-HJ-NP-Z2-9]{4} [A-HJ-NP-Z2-9]{4}$/.test(elements.seatQrImage.textContent),'admin must display an automatically generated readable join code');
+  elements.seatJoinLink.value=elements.seatQrImage.textContent;elements.seatJoinForm.onsubmit({preventDefault:function(){}});
   assert(JSON.parse(stored['table-players']).join(',') === 'alice','check-in must add the actual account');
   assert(elements.checkIn.icon.className === 'menu-photo','check-in must preserve its photo');
   elements.rebuyPlayer.value='alice';elements.rebuyValue.value='1000';elements.saveRebuy.onclick();
@@ -131,6 +170,13 @@ function run(argv) {
   homeButtons.find(function(el){return el.dataset.open === 'my';}).onclick();
   assert(elements.myGames.textContent === '1 回' && elements.myWinRate.textContent === '100.0%','profile must show recorded stats');
   assert(elements.myProfit.textContent.includes('500') && JSON.parse(stored['table-state']).history.length === 1,'page must preserve real profit without duplicate history');
+  assert(elements.myProfit.textContent === '+500 PD' && elements.ranking.innerHTML.includes('+500 PD'),'positive changes and ranking must show PD');
+  resultInputs.find(function(input){return input.dataset.key === 'payout';}).value=500;
+  elements.saveResults.onclick();
+  homeButtons.find(function(el){return el.dataset.open === 'my';}).onclick();
+  assert(elements.myProfit.textContent === '-500 PD','negative changes must use PD and retain the minus sign');
+  resultInputs.find(function(input){return input.dataset.key === 'payout';}).value=1500;
+  elements.saveResults.onclick();
   homeButtons.find(function(el){return el.dataset.open === 'admin';}).onclick();
   assert(elements.adminPlayers.innerHTML.includes('bob'),'admin must manage registered non-participants too');
   editButtons.find(function(button){return button.dataset.editPlayer === 'alice';}).onclick();
@@ -139,10 +185,42 @@ function run(argv) {
   elements.playerEditForm.onsubmit({preventDefault:function(){}});
   assert(TableData.statsFor('alice',JSON.parse(stored['table-state'])).profit === 1000,'admin form must persist edits and update saved ranking');
   editButtons.find(function(button){return button.dataset.editPlayer === 'bob';}).onclick();
+  globalThis.confirm=function(){return true;};
+  elements.editRole.value='admin';elements.playerEditForm.onsubmit({preventDefault:function(){}});
+  assert(JSON.parse(stored['table-accounts']).bob.role === 'admin','admin editor must persist granted permissions');
+  editButtons.find(function(button){return button.dataset.editPlayer === 'bob';}).onclick();
+  elements.editRole.value='player';elements.playerEditForm.onsubmit({preventDefault:function(){}});
+  assert(JSON.parse(stored['table-accounts']).bob.role === 'player','admin editor must allow role revocation');
+  editButtons.find(function(button){return button.dataset.editPlayer === 'bob';}).onclick();
   globalThis.confirm=function(){return false;}; elements.deletePlayerAccount.onclick();
   assert(JSON.parse(stored['table-accounts']).bob,'cancelled deletion must preserve account');
   globalThis.confirm=function(){return true;}; elements.deletePlayerAccount.onclick();
   assert(!JSON.parse(stored['table-accounts']).bob && !elements.ranking.innerHTML.includes('bob'),'confirmed deletion must persist and refresh ranking');
   assert(JSON.parse(stored['table-before-player-management']).accounts.bob,'deletion backup must preserve deleted account');
-  return 'PASS: registration, migration, settlement, admin editing, validation, permissions, deletion confirmation and backup';
+
+  const goodState=stored['table-state'];
+  stored['table-state']='{broken-json';elements.startupError.classList.add('hidden');elements.loadingScreen.classList.remove('hidden');
+  runPage();
+  assert(elements.loadingScreen.classList.contains('hidden') && !elements.startupError.classList.contains('hidden'),'corrupt saved JSON must show recovery instead of an infinite loader');
+  assert(stored['table-state'] === '{broken-json','failed boot must not overwrite unreadable data');
+  stored['table-state']=goodState;
+  const dataModule=globalThis.TableData;globalThis.TableData=undefined;
+  elements.startupError.classList.add('hidden');elements.loadingScreen.classList.remove('hidden');runPage();
+  assert(elements.loadingScreen.classList.contains('hidden') && !elements.startupError.classList.contains('hidden'),'missing helper file must escape loader');
+  globalThis.TableData=dataModule;
+  const normalSet=localStorage.setItem;
+  localStorage.setItem=function(){throw new Error('QuotaExceededError');};
+  elements.startupError.classList.add('hidden');elements.loadingScreen.classList.remove('hidden');runPage();
+  assert(elements.loadingScreen.classList.contains('hidden') && !elements.startupError.classList.contains('hidden'),'storage write failure must escape loader');
+  localStorage.setItem=normalSet;
+  window.requestAnimationFrame=function(){};
+  elements.startupError.classList.add('hidden');elements.loadingScreen.classList.remove('hidden');runPage();
+  const fallback=scheduled.find(function(timer){return timer.delay === 80;});
+  assert(Boolean(fallback),'paint fallback must exist when animation frames do not run');fallback.fn();
+  assert(elements.loadingScreen.classList.contains('hidden') && scheduled.length === 0,'stalled animation frames must not block startup');
+  elements.startupError.classList.add('hidden');elements.loadingScreen.classList.remove('hidden');
+  new Function(scripts[0])();
+  scheduled.find(function(timer){return timer.delay === 12000;}).fn();
+  assert(elements.loadingScreen.classList.contains('hidden') && !elements.startupError.classList.contains('hidden'),'a stalled external script must show recovery on timeout');
+  return 'PASS: Poker Dollar labels, positive/zero/negative PD changes, preserved records, join codes, roles and loading recovery';
 }

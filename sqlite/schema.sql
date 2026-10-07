@@ -1,4 +1,7 @@
 -- TABLE poker app — SQLite schema
+-- Currency is non-redeemable Poker Dollars (PD), not Japanese yen.
+-- The unused normalized game tables retain legacy *_yen column names to avoid
+-- destructive schema changes. Live app_state entries/payout values are PD.
 -- Passwords must be stored as Argon2id/bcrypt hashes by the server, never plaintext.
 PRAGMA foreign_keys = ON;
 

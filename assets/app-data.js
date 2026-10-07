@@ -15,12 +15,12 @@
   function defaults() {
     return {dataVersion:3,remaining:1800,paused:true,started:false,prize:0,
       startStack:1000,entries:{},busts:{},results:{},dealerIndex:0,
-      dealerMinutes:30,sb:100,bb:200,profiles:{},checkins:{},reports:{},history:[]};
+      dealerMinutes:30,sb:100,bb:200,profiles:{},checkins:{},seats:{},reports:{},history:[]};
   }
 
   function initialize(saved, savedPlayers, accounts) {
     const state = Object.assign(defaults(), JSON.parse(JSON.stringify(saved || {})));
-    ['entries','busts','results','profiles','checkins','reports'].forEach(function (key) {
+    ['entries','busts','results','profiles','checkins','seats','reports'].forEach(function (key) {
       state[key] = state[key] || {};
     });
     state.history = Array.isArray(state.history) ? state.history : [];
@@ -57,6 +57,11 @@
     if (cleanupChanged) state.prize = players.reduce(function (sum,name) { return sum + (Number(state.entries[name]) || 0); },0);
     if (!players.length) { state.dealerIndex=0; state.started=false; state.paused=true; state.remaining=state.dealerMinutes*60; }
     else state.dealerIndex = (Number(state.dealerIndex) || 0) % players.length;
+    // Preserve existing check-ins during migration; new seats expire at JST midnight.
+    if (!saved || !saved.seats) players.forEach(function (name) {
+      if (state.checkins[name]) state.seats[name]={day:japanDay(),joinedAt:new Date().toISOString()};
+    });
+    expireSeats(state);
     return {state:state,players:players,cleanupChanged:cleanupChanged};
   }
 
@@ -80,7 +85,7 @@
     const id = state.currentGameId || ('game-' + Date.now().toString(36));
     const entries = {}, results = {};
     players.forEach(function (p) { entries[p]=Number(state.entries[p]) || 0; results[p]=Object.assign({},state.results[p] || {}); });
-    const snapshot = {id:id,title:state.gameTitle || 'キャッシュゲーム',playedAt:state.finalizedAt || now,entries:entries,results:results};
+    const snapshot = {id:id,title:state.gameTitle || 'ポーカードルゲーム',playedAt:state.finalizedAt || now,entries:entries,results:results};
     const index = state.history.findIndex(function (game) { return game.id === id; });
     if (index < 0) state.history.push(snapshot); else state.history[index]=snapshot;
     state.currentGameId = id;
@@ -98,7 +103,7 @@
   function editPlayer(state, players, name, edit) {
     const numbers = ['entry','startStack','busts','chips','payout'];
     numbers.forEach(function (key) {
-      if (!Number.isSafeInteger(edit[key]) || edit[key] < (key === 'startStack' ? 1 : 0)) throw new Error('金額・点数・回数は正しい整数で入力してください。');
+      if (!Number.isSafeInteger(edit[key]) || edit[key] < (key === 'startStack' ? 1 : 0)) throw new Error('PD・点数・回数は正しい整数で入力してください。');
     });
     (edit.history || []).forEach(function (row) {
       if (!state.history[row.index] || !Object.prototype.hasOwnProperty.call(state.history[row.index].results || {},name)) throw new Error('履歴が見つかりません。');
@@ -129,9 +134,11 @@
       current.entries[name] = state.entries[name];
       current.results[name] = Object.assign({},state.results[name]);
     }
-    let next = players.filter(function (p) { return p !== name; });
-    if (edit.participating) next = players.includes(name) ? players.slice() : players.concat(name);
+    // Unseating must not remove financial participation or pending settlement.
+    const next = edit.participating && !players.includes(name) ? players.concat(name) : players.slice();
     state.checkins[name] = Boolean(edit.participating);
+    if (edit.participating) state.seats[name] = state.seats[name] || {day:japanDay(),joinedAt:new Date().toISOString()};
+    else delete state.seats[name];
     normalizeRoster(state,players,next);
     return next;
   }
@@ -147,12 +154,50 @@
     if (!accounts[actor] || accounts[actor].role !== 'admin') throw new Error('管理者のみ削除できます。');
     if (name === actor) throw new Error('ログイン中の管理者自身は削除できません。');
     delete accounts[name];
-    ['entries','busts','results','profiles','checkins','reports'].forEach(function (key) { delete state[key][name]; });
+    ['entries','busts','results','profiles','checkins','seats','reports'].forEach(function (key) { delete state[key][name]; });
     state.history.forEach(function (game) { if (game.entries) delete game.entries[name]; if (game.results) delete game.results[name]; });
     const next = players.filter(function (p) { return p !== name; });
     normalizeRoster(state,players,next);
     return next;
   }
 
-  globalThis.TableData = {initialize:initialize,statsFor:statsFor,recordGame:recordGame,rankingRows:rankingRows,editPlayer:editPlayer,deletePlayer:deletePlayer};
+  function japanDay(now) { return new Date(new Date(now === undefined ? Date.now() : now).getTime() + 9*60*60*1000).toISOString().slice(0,10); }
+  function expireSeats(state, now) {
+    const day = japanDay(now);
+    let changed=false;
+    Object.keys(state.seats).forEach(function (name) {
+      if (state.seats[name].day !== day) { delete state.seats[name]; state.checkins[name]=false; changed=true; }
+    });
+    if (state.seatInvite && state.seatInvite.day !== day) { delete state.seatInvite; changed=true; }
+    if (changed) { state.started=false; state.paused=true; state.dealerIndex=0; state.remaining=state.dealerMinutes*60; }
+    return changed;
+  }
+  function seatedNames(state, players, now) {
+    const day=japanDay(now);
+    return players.filter(function (name) { return state.checkins[name] && state.seats[name] && state.seats[name].day === day; });
+  }
+  function createSeatInvite(state, accounts, actor, token, now) {
+    if (!accounts[actor] || accounts[actor].role !== 'admin') throw new Error('参加キーは管理者のみ発行できます。');
+    if (!/^[A-HJ-NP-Z2-9]{8}$/.test(token)) throw new Error('参加キーを作成できませんでした。');
+    state.seatInvite={token:token,day:japanDay(now),createdBy:actor};
+    return state.seatInvite;
+  }
+  function joinSeat(state, players, accounts, name, token, now) {
+    if (!Object.prototype.hasOwnProperty.call(accounts,name)) throw new Error('先にログインしてください。');
+    const invite=state.seatInvite;
+    if (!invite || invite.token !== token || invite.day !== japanDay(now) || !accounts[invite.createdBy] || accounts[invite.createdBy].role !== 'admin') throw new Error('参加キーを確認できません。管理者に今日の参加キーを確認してください。');
+    state.seats[name]={day:japanDay(now),joinedAt:new Date(now === undefined ? Date.now() : now).toISOString()};
+    state.checkins[name]=true;
+    if (!players.includes(name)) { state.entries[name]=0; return players.concat(name); }
+    return players.slice();
+  }
+  function setRole(accounts, actor, name, role) {
+    if (!accounts[actor] || accounts[actor].role !== 'admin') throw new Error('管理者のみ権限を変更できます。');
+    if (!Object.prototype.hasOwnProperty.call(accounts,name) || !['admin','player'].includes(role)) throw new Error('変更するアカウントを確認してください。');
+    if (actor === name && role !== 'admin') throw new Error('自分自身の管理者権限は解除できません。');
+    if (accounts[name].role === 'admin' && role === 'player' && Object.keys(accounts).filter(function (p) {return accounts[p].role === 'admin';}).length <= 1) throw new Error('最後の管理者は解除できません。');
+    accounts[name].role=role;
+  }
+
+  globalThis.TableData = {initialize:initialize,statsFor:statsFor,recordGame:recordGame,rankingRows:rankingRows,editPlayer:editPlayer,deletePlayer:deletePlayer,japanDay:japanDay,expireSeats:expireSeats,seatedNames:seatedNames,createSeatInvite:createSeatInvite,joinSeat:joinSeat,setRole:setRole};
 }());

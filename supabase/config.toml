@@ -1,0 +1,5 @@
+project_id = "table-poker"
+
+[functions.table-api]
+# Public signup/login routes; the function verifies user JWTs on protected routes.
+verify_jwt = false
