@@ -9,10 +9,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def build(output):
-    url = os.environ.get('SUPABASE_URL', '').rstrip('/')
-    key = os.environ.get('SUPABASE_PUBLISHABLE_KEY', '')
-    if urlsplit(url).scheme != 'https' or not urlsplit(url).hostname or not key:
-        raise ValueError('GitHubのVariablesにSUPABASE_URLとSUPABASE_PUBLISHABLE_KEYを設定してください。')
+    url = os.environ.get('SUPABASE_URL', '').strip().rstrip('/')
+    key = os.environ.get('SUPABASE_PUBLISHABLE_KEY', '').strip()
+    if not url:
+        raise ValueError('SUPABASE_URLが実行環境に届いていません。Repository variablesとpages.ymlのenvを確認してください。')
+    try:
+        parsed = urlsplit(url)
+        valid_url = parsed.scheme == 'https' and bool(parsed.hostname) and not parsed.username and not parsed.password and not parsed.query and not parsed.fragment and not parsed.path and not any(c.isspace() for c in url)
+    except ValueError:
+        valid_url = False
+    if not valid_url:
+        raise ValueError('SUPABASE_URLの形式が違います。https://ogqorpaqxyuyslpoguxl.supabase.co の文字列だけを入力してください。Markdownのリンク・引用符・dashboardのURLは使えません。')
+    if not key:
+        raise ValueError('SUPABASE_PUBLISHABLE_KEYが実行環境に届いていません。Repository variablesとpages.ymlのenvを確認してください。')
     if key.startswith('sb_secret_'):
         raise ValueError('秘密キーは公開できません。Publishable keyを使用してください。')
     # Also reject the old JWT-form service_role key.
@@ -36,3 +45,4 @@ def build(output):
 
 if __name__ == '__main__':
     build(ROOT / 'dist')
+
