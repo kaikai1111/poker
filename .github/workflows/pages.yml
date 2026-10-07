@@ -22,7 +22,7 @@ jobs:
       - name: Build public files only
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY || vars.SUPABASE_PUBLISHABLE_KEY }}
         run: python3 scripts/build_pages.py
       - uses: actions/upload-pages-artifact@v3
         with:
